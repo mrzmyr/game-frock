@@ -1,0 +1,55 @@
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Frock</title>
+	<!-- basic -->
+	<meta name="author" content="Moritz Meyer">
+	<meta name="keywords" content="holyday, icecream, sandwitches">
+	<meta name="description" content="This is my awesome project">
+	<meta name="robots" content="index, follow, noarchive">
+	<!-- viewport -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="format-detection" content="telephone=no">
+	<!--[if ie]>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta http-equiv="imagetoolbar" content="false" />
+	<![endif]-->
+	<!-- links -->
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="shortcut icon" href="img/favicon.png">
+</head>
+<body>
+	<div id="wrapper">
+		<div id="header">Frock</div>
+		<div class="left">
+			<div id="level"></div>
+		</div>
+		<div class="right">
+			<div id="lifes">
+				<img src="img/life.png">
+				<img src="img/life.png">
+				<img src="img/life.png">
+			</div>
+		</div>
+		<div class="clear"></div>
+		<canvas id="gameCanvas"></canvas>
+		<canvas id="gameCanvasBackground"></canvas>
+		<div id="status"></div>
+		<div id="desc">	
+				<div class="left">
+					<div>move: <span>"W, A, S, D"</span>, space: <span>pause</span></div> <!--, return: <span>debug</span> -->
+					<div>press <span>escape</span> for new game</div>
+					<div><span>R</span> for reset to start (if you died)</div>
+					<div>mute with: <span>m</span> - currently <span id="mute"></span></div>
+				</div>
+				<div class="right">
+					<div id="fps"></div>
+				</div>
+		</div>
+	</div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+	<script src="script.js"></script>
+</body>
+</html>

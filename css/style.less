@@ -1,0 +1,66 @@
+@bg1-color: #FFF; // body
+@bg2-color: #EEE; // gameWindow
+@bg3-color: green;
+@line-color: green;
+
+body {
+	background: url(../img/bg.png);
+	margin: 0;
+	font-family: Arial, sans-serif;
+	font-size: 11px;
+	color: #FFF;
+}
+
+#wrapper {
+	width: 640px;
+	margin: 50px auto;
+}
+
+#game {
+	height: 640px;
+	width: 640px;
+	box-shadow: 0 0 50px rgba(0,0,0,0.2) inset;
+	
+    -webkit-transition: -webkit-transform 0.5s;
+       -moz-transition: -moz-transform 0.5s;
+        -ms-transition: -ms-transform 0.5s;
+         -o-transition: -o-transform 0.5s;
+            transition: transform 0.5s;
+    -webkit-transform-style: preserve-3d;
+       -moz-transform-style: preserve-3d;
+        -ms-transform-style: preserve-3d;
+         -o-transform-style: preserve-3d;
+            transform-style: preserve-3d;
+}
+#game.flipy {
+    -webkit-transform: rotateY( 180deg );
+       -moz-transform: rotateY( 180deg );
+        -ms-transform: rotateY( 180deg );
+         -o-transform: rotateY( 180deg );
+            transform: rotateY( 180deg );
+}
+#game.flipx {
+    -webkit-transform: rotateX( 180deg );
+       -moz-transform: rotateX( 180deg );
+        -ms-transform: rotateX( 180deg );
+         -o-transform: rotateX( 180deg );
+            transform: rotateX( 180deg );
+}
+
+#desc {
+	width: 640px;
+	margin: 5px 0;
+	opacity: 0.5;
+}
+#lifes {
+	margin: 5px 0;
+}
+span {
+	font-style: italic;
+	color: #5F0;
+}
+#mute { color: orange; }
+
+.right { float:right; }
+.left { float:left; }
+.clear { clear:both; }
