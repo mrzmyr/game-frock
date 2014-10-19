@@ -25,8 +25,8 @@ var game = {
     update: function (lvl) {
 
       switch(lvl) {
-        case 'up' : this.value += 1;  break;
-        case 'reset': this.value = 1;   break;
+        case 'up' : this.value += 1; break;
+        case 'reset': this.value = 1; break;
       }
 
       this.node.innerHTML = 'Level: <span>' + this.value + '</span>';
@@ -49,7 +49,7 @@ var game = {
       var rands = [];
       var borders = 2;
       var nextStart = 2;
-      var max = (canvas.height/frockObj.h) - borders; // complete height - top
+      var max = (canvas.height / frockObj.h) - borders; // complete height - top
 
       // push all possibilities
       while(max >= borders) {
@@ -176,7 +176,11 @@ var game = {
     value: '',
 
     onchange: function () {
-      $(this.node).show().stop(true, true).fadeOut();
+      $(this.node).removeClass('animation');
+      $(this.node).addClass('animation');
+       setTimeout(function () {
+           $(this.node).removeClass('animation');
+       }.bind(this), 500);
     },
 
     update: function (v) {
@@ -535,13 +539,12 @@ var way = function (y1, y2) {
  *  @desc generates a block object
  */
 
-var block = function (x, y, w, h, t) {
+var block = function (x, y, w, h) {
 
   this.x = x;
   this.y = y;
-  this.w = w || 32;
-  this.h = h || 32;
-  this.t = t || 1;
+  this.w = 32;
+  this.h = 32;
 
   this.tpl = prt(this.w, this.h);
   this.ctx = this.tpl.getContext('2d');
@@ -608,7 +611,7 @@ var audio = function () {
     switch(s) {
       case 'move': this.node.src = this.path + 'move.wav'; break;
       case 'dead': this.node.src = this.path + 'dead.wav'; break;
-      case 'levelup': this.node.src = this.path + 'frog.wav'; break;
+      case 'levelup': this.node.src = this.path + 'levelup.mp3'; break;
       case 'car': this.node.src = this.path + 'car.wav'; break;
     }
 
@@ -659,9 +662,8 @@ function update() {
     audioObj.play('levelup'); // play sound
 
     game.level.update('up');
+    game.status.update('Level up');
     game.level.generate();
-
-    // $(canvas.node).toggleClass('flipx'); // animate, css3
   }
 
   draw();
