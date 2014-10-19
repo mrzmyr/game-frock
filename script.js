@@ -117,7 +117,7 @@ var game = {
           var oldDistance = 0;
 
           for(r = 0; r < count; r++) {
-            var type = Math.round(genRnd(1,4));
+            var type = Math.round(genRnd(1,5));
 
             x += sys.dimension.x * 2; // + 64, every obstacle
 
@@ -136,9 +136,21 @@ var game = {
 
       canvas.perLevel.clear();
 
+      var img = new Image();
+
+      img.onload = function () {
+
+        for (var h = canvas.perLevel.node.height / 32; h >= 0; h--) {
+          for (var w = canvas.perLevel.node.width / 32; w >= 0; w--) {
+            canvas.perLevel.ctx.drawImage(img, w * 32, h * 32);
+          }
+        }
+      }.bind(this);
+
+      img.src = 'img/gras.png';
+
       // draw ways
       for(w in ways) ways[w].draw(canvas.perLevel.ctx);
-
     }
   },
 
@@ -257,7 +269,7 @@ function printBorder(ctx, w, h) {
   ctx.lineTo(w, h);
   ctx.lineTo(0, h);
   ctx.lineTo(0, 0);
-  ctx.strokeStyle = 'pink';
+  ctx.strokeStyle = 'deeppink';
   ctx.stroke();
 }
 
@@ -381,9 +393,8 @@ var obstacle = function (x, y, t, d, s, w, h) {
       case 2: img.src = 'img/car.png'; break;
       case 3: img.src = 'img/car2.png'; break;
       case 4: img.src = 'img/car3.png'; break;
+      case 5: img.src = 'img/truck.png'; break;
     }
-
-    this.img = img;
 
     // put pre rendered canvas on canvas
     destContext.drawImage(this.tpl, this.x, this.y);
@@ -409,14 +420,7 @@ var frock = function (x, y, w, h, d) {
   this.tpl = prt(this.w, this.h);
   this.ctx = this.tpl.getContext('2d');
 
-  this.moveDisabled = {
-    left  : false,
-    right : false,
-    up    : false,
-    down  : false
-  };
-
-  this.draw = function (destContext /* destination context */) {
+  this.draw = function (destinationContext) {
 
     var img = new Image();
     var self = this;
@@ -427,10 +431,9 @@ var frock = function (x, y, w, h, d) {
     }
 
     img.src = 'img/frock' + (this.died ? '_dead' : '') + '.png';
-    this.img = img;
 
     // put pre rendered canvas on canvas
-    destContext.drawImage(this.tpl, this.x, this.y);
+    destinationContext.drawImage(this.tpl, this.x, this.y);
 
     // clean frock
     this.ctx.clearRect(0, 0, this.w, this.h);
@@ -501,21 +504,26 @@ var way = function (y1, y2) {
   this.template = prt(this.width, this.height);
   this.templateCtx = this.template.getContext('2d');
 
-  this.draw = function (destContext /* destination context */) {
+  this.draw = function (destinationContext) {
 
-    // draw bg
-    this.templateCtx.fillStyle = "rgba(0,0,0,0.2)";
-    this.templateCtx.fillRect(0, 0, this.width, this.height);
+    var img = new Image();
 
-    // borders
-    this.templateCtx.fillStyle = "rgba(0,0,0, 0.2)";
-    this.templateCtx.fillRect(0, 0, this.width, 1);
+    img.onload = function () {
 
-    this.templateCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
-    this.templateCtx.fillRect(0, this.height - 1, this.width, 1);
+      for (var h = this.height / 32; h >= 0; h--) {
+        for (var w = this.width / 32; w >= 0; w--) {
+          this.templateCtx.drawImage(img, w * 32, h * 32);
+        }
+      }
 
-    // put pre rendered canvas on canvas
-    destContext.drawImage(this.template, 0, this.y1);
+      if(game.debug) {
+        printBorder(this.templateCtx, this.width, this.height);
+      }
+
+      destinationContext.drawImage(this.template, 0, this.y1);
+    }.bind(this);
+
+    img.src = 'img/street.png';
 
     // clean
     this.templateCtx.clearRect(0, 0, this.width, this.height);
@@ -534,10 +542,11 @@ var block = function (x, y, w, h, t) {
   this.w = w || 32;
   this.h = h || 32;
   this.t = t || 1;
+
   this.tpl = prt(this.w, this.h);
   this.ctx = this.tpl.getContext('2d');
 
-  this.draw = function (destContext /* destination context */) {
+  this.draw = function (destinationContext) {
 
     var img = new Image();
     var self = this;
@@ -553,7 +562,7 @@ var block = function (x, y, w, h, t) {
 
     // put pre rendered canvas on canvas
 
-    destContext.drawImage(this.tpl, this.x, this.y);
+    destinationContext.drawImage(this.tpl, this.x, this.y);
 
     // clean frock
     this.ctx.clearRect(0, 0, this.w, this.h);
