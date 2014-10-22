@@ -1,4 +1,3 @@
-
 var gameNode = document.getElementById('gameCanvas');
 var gameBackgroundNode = document.getElementById('gameCanvasBackground');
 
@@ -139,7 +138,6 @@ var game = {
       var img = new Image();
 
       img.onload = function () {
-
         for (var h = canvas.perLevel.node.height / 32; h >= 0; h--) {
           for (var w = canvas.perLevel.node.width / 32; w >= 0; w--) {
             canvas.perLevel.ctx.drawImage(img, w * 32, h * 32);
@@ -357,6 +355,8 @@ var obstacle = function (x, y, t, d, s, w, h) {
   this.tpl = prt(this.w, this.h); // for pre rendering
   this.ctx = this.tpl.getContext('2d');
 
+  var img;
+
   this.drive = function (delta, speed) {
 
     if(this.x < -this.w) this.x = canvas.width;
@@ -374,37 +374,37 @@ var obstacle = function (x, y, t, d, s, w, h) {
 
   this.draw = function (destContext /* destination context */) {
 
-    var img = new Image();
-    var self = this;
+    if(img === undefined) {
 
-    img.onload = function () {
+      img = new Image();
 
-      if(self.d === 'ltr') { // turn around
-        self.ctx.translate(0 , 0);
-        self.ctx.rotate(180 * Math.PI/180);
-        self.ctx.drawImage(img, -self.w, -self.h, self.w, self.h);
-        self.ctx.rotate(180 * Math.PI/180);
-        self.ctx.translate(0, 0);
-      } else {
-        self.ctx.drawImage(img, 0, 0);
+      img.onload = function () {
+
+        if(this.d === 'ltr') { // turn around
+          this.ctx.translate(0 , 0);
+          this.ctx.rotate(180 * Math.PI/180);
+          this.ctx.drawImage(img, -this.w, -this.h, this.w, this.h);
+          this.ctx.rotate(180 * Math.PI/180);
+          this.ctx.translate(0, 0);
+        } else {
+          this.ctx.drawImage(img, 0, 0);
+        }
+
+        if(game.debug) printBorder(this.ctx, this.w, this.h);
+      }.bind(this);
+
+      switch(this.t) {
+        case 1: img.src = 'img/motorbike.png'; break;
+        case 2: img.src = 'img/car.png'; break;
+        case 3: img.src = 'img/car2.png'; break;
+        case 4: img.src = 'img/car3.png'; break;
+        case 5: img.src = 'img/truck.png'; break;
       }
 
-      if(game.debug) printBorder(self.ctx, self.w, self.h);
-    }
-
-    switch(this.t) {
-      case 1: img.src = 'img/motorbike.png'; break;
-      case 2: img.src = 'img/car.png'; break;
-      case 3: img.src = 'img/car2.png'; break;
-      case 4: img.src = 'img/car3.png'; break;
-      case 5: img.src = 'img/truck.png'; break;
     }
 
     // put pre rendered canvas on canvas
     destContext.drawImage(this.tpl, this.x, this.y);
-
-    // clean
-    this.ctx.clearRect(0, 0, this.w, this.h);
   }
 }
 
@@ -413,34 +413,49 @@ var obstacle = function (x, y, t, d, s, w, h) {
  *  @desc generates the frock object
  */
 
-var frock = function (x, y, w, h, d) {
+var frock = function (x, y, w, h) {
 
   this.w = 32;
   this.h = 32;
-  this.x = canvas.width/2 || x;
+  this.x = canvas.width / 2 || x;
   this.y = canvas.height - 32 || y; // middle
 
-  this.died = d; // dead
-  this.tpl = prt(this.w, this.h);
-  this.ctx = this.tpl.getContext('2d');
+  this.died = false;
+  this.template = prt(this.w, this.h);
+  this.templateCtx = this.template.getContext('2d');
+
+  var img;
+  var lastDied;
 
   this.draw = function (destinationContext) {
 
-    var img = new Image();
-    var self = this;
+    if(img === undefined || this.reseted) {
 
-    img.onload = function () {
-      self.ctx.drawImage(img, 0, 0);
-      if(game.debug) printBorder(self.ctx, self.w, self.h);
+      this.reseted = false;
+
+      img = new Image();
+
+      img.onload = function () {
+        this.templateCtx.clearRect(0, 0, this.w, this.h);
+        this.templateCtx.drawImage(img, 0, 0);
+      }.bind(this);
+
+      img.src = 'img/frock.png';
+
+    } else if (this.died) {
+
+      img = new Image();
+
+      img.onload = function () {
+        this.templateCtx.clearRect(0, 0, this.w, this.h);
+        this.templateCtx.drawImage(img, 0, 0);
+      }.bind(this);
+
+      img.src = 'img/frock_dead.png';
     }
 
-    img.src = 'img/frock' + (this.died ? '_dead' : '') + '.png';
-
     // put pre rendered canvas on canvas
-    destinationContext.drawImage(this.tpl, this.x, this.y);
-
-    // clean frock
-    this.ctx.clearRect(0, 0, this.w, this.h);
+    destinationContext.drawImage(this.template, this.x, this.y);
   }
 
   this.move = function (direction) {
@@ -459,11 +474,20 @@ var frock = function (x, y, w, h, d) {
 
     // collision with blocks
     for(b = 0; b < blocks.length; b++) {
-      wouldHit = hits(tempCoords.x, tempCoords.y, this.w, this.h, blocks[b].x, blocks[b].y, blocks[b].w, blocks[b].h) || wouldHit;
+      wouldHit = hits(
+        tempCoords.x,
+        tempCoords.y,
+        this.w,
+        this.h,
+        blocks[b].x,
+        blocks[b].y,
+        blocks[b].w,
+        blocks[b].h
+      ) || wouldHit;
     }
 
     // disable on game borders
-    wouldHit =  wouldHit ||
+    wouldHit = wouldHit ||
           hits(tempCoords.x, tempCoords.y, this.w, this.h, 0, -this.h, canvas.width, this.h) || // top wall
           hits(tempCoords.x, tempCoords.y, this.w, this.h, -this.w, 0, this.w, canvas.height) || // left wall
           hits(tempCoords.x, tempCoords.y, this.w, this.h, canvas.width, 0, this.w, canvas.height) || // right wall
@@ -486,8 +510,10 @@ var frock = function (x, y, w, h, d) {
     if(direction === 'reset') {
       scrollAnimateTo(canvas.height, 100);
 
-      this.x = canvas.width/2;
+      this.x = canvas.width / 2;
       this.y = canvas.height - this.h;
+
+      this.reseted = true;
     }
   }
 
@@ -546,29 +572,26 @@ var block = function (x, y, w, h) {
   this.w = 32;
   this.h = 32;
 
-  this.tpl = prt(this.w, this.h);
-  this.ctx = this.tpl.getContext('2d');
+  this.template = prt(this.w, this.h);
+  this.templateCtx = this.template.getContext('2d');
+
+  var img;
 
   this.draw = function (destinationContext) {
 
-    var img = new Image();
-    var self = this;
+    if(img === undefined) {
+      img = new Image();
 
-    img.onload = function () {
-      self.ctx.drawImage(img, 0, 0);
-      if(game.debug) printBorder(self.ctx, self.w, self.h);
+      img.onload = function () {
+        this.templateCtx.drawImage(img, 0, 0);
+        if(game.debug) printBorder(this.templateCtx, this.w, this.h);
+      }.bind(this);
+
+      img.src = 'img/stone.png';
     }
 
-    img.src = 'img/stone.png';
-
-    this.img = img;
-
     // put pre rendered canvas on canvas
-
-    destinationContext.drawImage(this.tpl, this.x, this.y);
-
-    // clean frock
-    this.ctx.clearRect(0, 0, this.w, this.h);
+    destinationContext.drawImage(this.template, this.x, this.y);
   }
 
 }
@@ -678,11 +701,11 @@ function draw() {
 
   // print out, debug lines
   if(game.debug) {
-    var max = (canvas.height/32);
+    var max = (canvas.height / 32);
 
-    for(i = 0; i < max+1; i++) {
-      canvas.perFrame.ctx.moveTo(0,i*32);
-      canvas.perFrame.ctx.lineTo(canvas.width,i*32);
+    for(i = 0; i < max + 1; i++) {
+      canvas.perFrame.ctx.moveTo(0, i * 32);
+      canvas.perFrame.ctx.lineTo(canvas.width, i * 32);
     }
     canvas.perFrame.ctx.stroke();
   }
