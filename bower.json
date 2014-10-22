@@ -1,0 +1,22 @@
+{
+  "name": "game-frock",
+  "version": "0.1.0",
+  "homepage": "https://github.com/mrzmyr/game-frock",
+  "authors": [
+    "mrzmyr <m0ritz.m3yer@gmail.com>"
+  ],
+  "description": "Simple frogger clone in HTML5 canvas",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.1",
+    "q": "~2.0.2"
+  }
+}
