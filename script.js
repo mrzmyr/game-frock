@@ -174,11 +174,11 @@ var game = {
     value: '',
 
     onchange: function () {
-      $(this.node).removeClass('animation');
-      $(this.node).addClass('animation');
-       setTimeout(function () {
-           $(this.node).removeClass('animation');
-       }.bind(this), 500);
+      this.node.classList.remove('animation');
+      this.node.classList.add('animation');
+      setTimeout(function () {
+        this.node.classList.remove('animation');
+      }.bind(this), 500);
     },
 
     update: function (v) {
