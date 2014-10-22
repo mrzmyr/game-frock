@@ -357,7 +357,7 @@ var obstacle = function (x, y, t, d, s, w, h) {
 
   var img;
 
-  this.drive = function (delta, speed) {
+  this.drive = function (delta) {
 
     if(this.x < -this.w) this.x = canvas.width;
     if(this.x > canvas.width + this.w) this.x = -this.w;
@@ -365,9 +365,9 @@ var obstacle = function (x, y, t, d, s, w, h) {
     // drive the obstacles
 
     if(this.d === 'ltr') {
-      this.x += (speed || this.s) * delta; // left to right
+      this.x += this.s * delta; // left to right
     } else {
-      this.x -= (speed || this.s) * delta; // right to left
+      this.x -= this.s * delta; // right to left
     }
 
   }
@@ -596,6 +596,28 @@ var block = function (x, y, w, h) {
 
 }
 
+var fpsMeter = function () {
+  this._then = Date.now();
+  this._fps = 0;
+  this._fpsMeterNode = document.getElementById('fps');
+
+  setInterval(function () {
+    this._fpsMeterNode.innerHTML = this._fps;
+    this._fps = 0;
+  }.bind(this), 1000);
+
+  this.start = function () {
+    this._now = Date.now();
+    this.delta = this._now - this._then;
+
+    this._fps++;
+  };
+
+  this.end = function () {
+    this._then = this._now;
+  };
+};
+
 /**
  *  @name audio
  *  @desc generates the audio object
@@ -646,29 +668,24 @@ var audio = function () {
 // actions! yay!
 // ------------------------------------------------------------------------------------------
 
-var then    = Date.now();
 var frockObj  = new frock();
 var audioObj  = new audio();
+var fpsMeterObj = new fpsMeter();
 
 var obstacles   = [];
 var ways    = [];
 var blocks    = [];
 
-var fps     = 0;
-
 function update() {
 
-  var now   = Date.now();
-  var delta   = now - then;
-
-  fps++;
+  fpsMeterObj.start();
 
   requestAnimFrame(update);
 
   if(!game.pause) {
 
     for(i = 0; i < obstacles.length; i++) {
-      obstacles[i].drive(delta);  // let the obstacle driving
+      obstacles[i].drive(fpsMeterObj.delta);  // let the obstacle driving
       frockObj.died = frockObj.died || hits(frockObj.x, frockObj.y, frockObj.w, frockObj.h, obstacles[i].x, obstacles[i].y, obstacles[i].w, obstacles[i].h, 1);
     }
 
@@ -691,7 +708,7 @@ function update() {
 
   draw();
 
-  then = now;
+  fpsMeterObj.end();
 }
 
 function draw() {
@@ -794,12 +811,6 @@ function init () {
   game.level.generate();
 
   audioObj.init();
-
-  setInterval(function () {
-    oldFps = fps;
-    document.getElementById('fps').innerHTML = fps;
-    fps = 0;
-  }, 1000);
 }
 
 init();
