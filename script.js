@@ -120,7 +120,7 @@ var game = {
           var x = Math.floor(genRnd(0, canvas.width));
           var y = i;
           var direction = (genRnd(1, 10) > 5 ? 'ltr' : 'rtl');
-          var speed = 0.1 * this.value + 0.1;
+          var speed = 0.005 * Math.pow(this.value, 2) + 0.2;
           var count = Math.floor(genRnd(1, Math.ceil(this.value/2))); // every 10th level
 
           var oldDistance = 0;
