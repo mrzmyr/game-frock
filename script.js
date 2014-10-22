@@ -730,12 +730,7 @@ function draw() {
   for(var o in obstacles) obstacles[o].draw(canvas.perFrame.ctx);
 }
 
-
-
-// window.onfocus = function () { game.pause = false; }
-// window.onblur = function () { game.pause = true; }
-
-window.onkeydown = function (event) {
+window.addEventListener('keydown', function (event) {
 
   event = event || window.event;
   var c = event.keyCode;
