@@ -800,7 +800,7 @@ window.addEventListener('keydown', function (event) {
   if(c == 77) audioObj.toggleMute();
 
   // new game
-  if(c == 27 && frockObj.died && game.pause && game.lifes.value == 0) {
+  if(c == 27 && frockObj.died && game.lifes.value == 0) {
 
     frockObj.died = false;
     frockObj.move('reset');
