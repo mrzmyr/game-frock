@@ -440,18 +440,11 @@ var frock = function (x, y, w, h) {
         this.templateCtx.drawImage(img, 0, 0);
       }.bind(this);
 
-      img.src = 'img/frock.png';
-
-    } else if (this.died) {
-
-      img = new Image();
-
-      img.onload = function () {
-        this.templateCtx.clearRect(0, 0, this.w, this.h);
-        this.templateCtx.drawImage(img, 0, 0);
-      }.bind(this);
-
-      img.src = 'img/frock_dead.png';
+      if(!this.died) {
+        img.src = 'img/frock.png';
+      } else {
+        img.src = 'img/frock_dead.png';
+      }
     }
 
     // put pre rendered canvas on canvas
