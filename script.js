@@ -648,43 +648,36 @@ var fpsMeter = function () {
 
 var audio = function () {
 
+  var SOUNDS = ['move', 'dead', 'levelup', 'car'];
+
   this.path = 'audio/';
   this.mute = true;
 
-  this.init = function () {
+  this.nodes = {};
 
-    this.node = document.createElement('audio');
-    this.node.id = 'sounds';
-    this.node.volume = 0.5;
-
-    this.toggleMute();
-
-    document.body.appendChild(this.node);
-
-    var self = this;
-
+  for (var s = 0; s < SOUNDS.length; s++) {
+    this.nodes[SOUNDS[s]] = document.createElement('audio');
+    this.nodes[SOUNDS[s]].id = 'sound_' + SOUNDS[s];
+    this.nodes[SOUNDS[s]].volume = 0.5;
+    this.nodes[SOUNDS[s]].src = this.path + SOUNDS[s] +  '.wav';
+    document.body.appendChild(this.nodes[SOUNDS[s]]);
   }
 
   this.toggleMute = function () {
-    this.mute = !this.mute
+    this.mute = !this.mute;
     document.getElementById('mute').innerHTML = (this.mute ? 'OFF' : 'ON');
   }
 
-  this.play = function (s) {
+  this.toggleMute();
+
+  this.play = function (soundId) {
 
     if(this.mute) return; // no sound on mute
 
-    var self = this;
-
-    switch(s) {
-      case 'move': this.node.src = this.path + 'move.wav'; break;
-      case 'dead': this.node.src = this.path + 'dead.wav'; break;
-      case 'levelup': this.node.src = this.path + 'levelup.mp3'; break;
-      case 'car': this.node.src = this.path + 'car.wav'; break;
+    if(SOUNDS.indexOf(soundId) !== -1) {
+      this.nodes[soundId].currentTime = 0;
+      this.nodes[soundId].play();
     }
-
-    this.node.addEventListener('canplay', self.node.play, false);
-
   }
 }
 
@@ -738,13 +731,15 @@ function update() {
     frockObj.move('reset');
     audioObj.play('levelup');
 
+    game.status.update('Level up');
+
     game.levelUp = true;
 
     game.level.update();
-
-    game.status.update('Level up');
     game.level.draw();
 
+    // pause game for 200ms to prevent from
+    // accidentally moving on street after level up
     game.pause = true;
 
     setTimeout(function () {
@@ -766,7 +761,7 @@ function draw() {
   frockObj.draw(canvas.perFrame.ctx);
 
   // draw blocks
-  for(b in blocks) blocks[b].draw(canvas.perFrame.ctx);
+  for(var b in blocks) blocks[b].draw(canvas.perFrame.ctx);
 
   // draw obstacles
   for(var o in obstacles) obstacles[o].draw(canvas.perFrame.ctx);
@@ -830,17 +825,16 @@ window.addEventListener('keydown', function (event) {
     game.pause = !game.pause;
     game.status.update(game.pause ? 'pause' : 'running');
   }
-});
+}, false);
 
-(function init () {
+function init () {
   gameNode.height = gameBackgroundNode.height = canvas.height;
   gameNode.width  = gameBackgroundNode.width = canvas.width;
 
   game.level.update();
   game.level.draw();
 
-  audioObj.init();
-
   update();
-})();
+}
 
+window.addEventListener('DOMContentLoaded', init, false);
