@@ -146,6 +146,8 @@ var game = {
       var img = new Image();
 
       img.onload = function () {
+
+        // draw gras
         for (var h = canvas.perLevel.node.height / 32; h >= 0; h--) {
           for (var w = canvas.perLevel.node.width / 32; w >= 0; w--) {
             canvas.perLevel.ctx.drawImage(img, w * 32, h * 32);
@@ -153,7 +155,6 @@ var game = {
         }
 
         // draw ways after gras was loaded and draw
-
         for(w in ways) {
           ways[w].draw(canvas.perLevel.ctx);
         }
@@ -168,16 +169,28 @@ var game = {
     value: 3,
     nodes: document.getElementById('lifes').getElementsByTagName('img'),
 
-    update: function (lifes) {
+    updateView: function() {
 
-      switch(lifes) {
-        case 'up': this.value += 1; break;
-        case 'down': this.value -= 1; break;
-        case 'reset': this.value = 3; break;
+      for(i = 0; i < 3; i++) {
+        this.nodes[i].src = 'img/life_inv.png';
       }
 
-      for(i = 0; i < 3; i++) this.nodes[i].src = 'img/life_inv.png';
-      for(i = 0; i < this.value; i++) this.nodes[i].src = 'img/life.png';
+      for(i = 0; i < this.value; i++) {
+        this.nodes[i].src = 'img/life.png';
+      }
+    },
+
+    update: function (lifes) {
+
+      if(game.newChance) {
+        this.value -= 1
+      }
+
+      if (game.reset) {
+        this.value = 3;
+      }
+
+      this.updateView();
     }
   },
 
@@ -601,6 +614,11 @@ var block = function (x, y, w, h) {
 
 }
 
+/**
+ *  @name fpsMeter
+ *  @desc fpsMeter module to update the view with the actual fps count
+ */
+
 var fpsMeter = function () {
   this._then = Date.now();
   this._fps = 0;
@@ -718,14 +736,20 @@ function update() {
   if(frockObj.y < frockObj.h && !frockObj.d) {
 
     frockObj.move('reset');
-    audioObj.play('levelup'); // play sound
+    audioObj.play('levelup');
 
     game.levelUp = true;
 
     game.level.update();
 
     game.status.update('Level up');
-    game.level.generate();
+    game.level.draw();
+
+    game.pause = true;
+
+    setTimeout(function () {
+      game.pause = false;
+    }, 200);
   }
 
   draw();
@@ -794,8 +818,10 @@ window.addEventListener('keydown', function (event) {
     frockObj.died = false;
     frockObj.move('reset');
 
+    game.newChance = true;
     game.pause = false;
-    game.lifes.update('down');
+
+    game.lifes.update();
     game.level.draw();
   }
 
