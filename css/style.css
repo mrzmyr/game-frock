@@ -89,7 +89,7 @@ span {
 
   opacity: 0;
 
-  -webkit-transition: opacity 0.5s;
+  -webkit-transition: opacity 0.8s;
 }
 
 #status.show {
@@ -97,7 +97,7 @@ span {
 }
 
 #status.animation {
-  -webkit-animation: scaleUp 0.5s; /* Chrome, Safari, Opera */
+  -webkit-animation: scaleUp 0.8s; /* Chrome, Safari, Opera */
 }
 
 @-webkit-keyframes scaleUp {

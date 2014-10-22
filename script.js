@@ -203,7 +203,7 @@ var game = {
       this.node.classList.add('animation');
       setTimeout(function () {
         this.node.classList.remove('animation');
-      }.bind(this), 500);
+      }.bind(this), 800);
     },
 
     update: function (v) {
