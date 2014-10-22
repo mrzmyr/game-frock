@@ -16,22 +16,32 @@ var game = {
   debug: false,
   pause: false,
 
+  // get set to true when level get one up
+  levelUp: false,
+
+  // get set to true when game should starts over
+  reset: false,
+
   level: {
 
     value: 1,
     node: document.getElementById('level'),
 
-    update: function (lvl) {
-
-      switch(lvl) {
-        case 'up' : this.value += 1; break;
-        case 'reset': this.value = 1; break;
-      }
-
+    updateView: function () {
       this.node.innerHTML = 'Level: <span>' + this.value + '</span>';
     },
 
-    generate: function () {
+    update: function (lvl) {
+
+      if(game.levelUp) {
+        this.value += 1;
+      }
+
+      if(game.levelReset) {
+        this.value = 1;
+      }
+
+      this.updateView();
 
       // reset
       obstacles = [];
@@ -130,11 +140,9 @@ var game = {
         }
       }
 
-      // finally draw the objects we created
-      // -------------------------------------
+    },
 
-      canvas.perLevel.clear();
-
+    draw: function () {
       var img = new Image();
 
       img.onload = function () {
@@ -143,12 +151,16 @@ var game = {
             canvas.perLevel.ctx.drawImage(img, w * 32, h * 32);
           }
         }
+
+        // draw ways after gras was loaded and draw
+
+        for(w in ways) {
+          ways[w].draw(canvas.perLevel.ctx);
+        }
+
       }.bind(this);
 
       img.src = 'img/gras.png';
-
-      // draw ways
-      for(w in ways) ways[w].draw(canvas.perLevel.ctx);
     }
   },
 
@@ -429,7 +441,7 @@ var frock = function (x, y, w, h) {
 
   this.draw = function (destinationContext) {
 
-    if(img === undefined || this.reseted) {
+    if(img === undefined || this.reseted || this.died) {
 
       this.reseted = false;
 
@@ -678,13 +690,27 @@ function update() {
   if(!game.pause) {
 
     for(i = 0; i < obstacles.length; i++) {
-      obstacles[i].drive(fpsMeterObj.delta);  // let the obstacle driving
-      frockObj.died = frockObj.died || hits(frockObj.x, frockObj.y, frockObj.w, frockObj.h, obstacles[i].x, obstacles[i].y, obstacles[i].w, obstacles[i].h, 1);
-    }
 
-    if(frockObj.died) {
-      audioObj.play('dead');
-      game.pause = true;
+      obstacles[i].drive(fpsMeterObj.delta);  // let the obstacle drive
+
+      if(!frockObj.died) {
+        frockObj.died = hits(
+          frockObj.x,
+          frockObj.y,
+          frockObj.w,
+          frockObj.h,
+          obstacles[i].x,
+          obstacles[i].y,
+          obstacles[i].w,
+          obstacles[i].h,
+          1
+        );
+
+        if(frockObj.died) {
+          audioObj.play('dead');
+        }
+      }
+
     }
   }
 
@@ -694,7 +720,10 @@ function update() {
     frockObj.move('reset');
     audioObj.play('levelup'); // play sound
 
-    game.level.update('up');
+    game.levelUp = true;
+
+    game.level.update();
+
     game.status.update('Level up');
     game.level.generate();
   }
@@ -708,17 +737,6 @@ function draw() {
 
   // clear canvas
   canvas.perFrame.clear();
-
-  // print out, debug lines
-  if(game.debug) {
-    var max = (canvas.height / 32);
-
-    for(i = 0; i < max + 1; i++) {
-      canvas.perFrame.ctx.moveTo(0, i * 32);
-      canvas.perFrame.ctx.lineTo(canvas.width, i * 32);
-    }
-    canvas.perFrame.ctx.stroke();
-  }
 
   // draw frock
   frockObj.draw(canvas.perFrame.ctx);
@@ -739,10 +757,11 @@ window.addEventListener('keydown', function (event) {
   // prevent scrolling, up, down, space
   if(c === 40 || c === 38 || c === 32) event.preventDefault();
 
-  if(!game.pause) {
-    if(frockObj.y - frockObj.h * 3 < window.scrollY) {
-      scrollAnimateTo(frockObj.y - frockObj.h * 3, 100);
-    }
+  if(!game.pause && !frockObj.died) {
+
+    // if(frockObj.y - frockObj.h * 3 < window.scrollY) {
+    //   scrollAnimateTo(frockObj.y - frockObj.h * 3, 100);
+    // }
 
     switch(c) {
       case 40: case 83: frockObj.move('down'); break;
@@ -763,21 +782,21 @@ window.addEventListener('keydown', function (event) {
     frockObj.move('reset');
 
     game.pause = false;
-    game.lifes.update('reset');
+    game.reset = true;
 
-    game.level.update('reset');
-    game.level.generate();
+    game.level.update();
+    game.level.draw();
   }
 
   // new chance
-  if(c == 82 && frockObj.died && game.pause && game.lifes.value > 0) {
+  if(c == 82 && frockObj.died && game.lifes.value > 0) {
 
     frockObj.died = false;
     frockObj.move('reset');
 
     game.pause = false;
     game.lifes.update('down');
-    game.level.generate();
+    game.level.draw();
   }
 
   // pause game, if space was pressed & frock is alive
@@ -785,22 +804,17 @@ window.addEventListener('keydown', function (event) {
     game.pause = !game.pause;
     game.status.update(game.pause ? 'pause' : 'running');
   }
-}
+});
 
-function init () {
-
-  // sizing canvas
+(function init () {
   gameNode.height = gameBackgroundNode.height = canvas.height;
   gameNode.width  = gameBackgroundNode.width = canvas.width;
 
-  canvas.perLevel.clear();
-
   game.level.update();
-  game.level.generate();
+  game.level.draw();
 
   audioObj.init();
-}
 
-init();
-update();
+  update();
+})();
 
