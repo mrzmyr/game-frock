@@ -1,6 +1,19 @@
 var gameNode = document.getElementById('gameCanvas');
 var gameBackgroundNode = document.getElementById('gameCanvasBackground');
 
+var IMAGES = {
+  GRAS: 'img/gras.png',
+  MOTORBIKE: 'img/motorbike.png',
+  CAR1: 'img/car1.png',
+  CAR2: 'img/car2.png',
+  CAR3: 'img/car3.png',
+  TRUCK: 'img/truck.png',
+  STRONE: 'img/strone.png',
+  STREET: 'img/street.png',
+  FROCK: 'img/frock.png',
+  FROCK_DEAD: 'img/frock_dead.png',
+};
+
 var sys = {
   version: '0.1',
   dimension: {
@@ -161,7 +174,7 @@ var game = {
 
       }.bind(this);
 
-      img.src = 'img/gras.png';
+      img.src = IMAGES.GRAS;
     }
   },
 
@@ -242,27 +255,26 @@ var canvas = {
 // some useful functions
 // ------------------------------------------------------------------------------------------
 
-// var parameterRange = function(min, max, value, step) {
-//
-//  this.id   = Math.floor(Math.random()*100);
-//  this.node   = document.createElement('input');
-//  this.value  = value;
-//
-//  this.node.type  = 'range';
-//  this.node.min   = min;
-//  this.node.max   = max;
-//  this.node.value = value;
-//  this.node.step  = step;
-//  this.node.style.width = '100%';
-//
-//  var self = this;
-//
-//  this.node.onchange = function () {
-//    self.value = self.node.value;
-//  };
-//
-//  document.body.appendChild(this.node);
-// };
+// https://gist.github.com/eikes/3925183
+function imgpreload( imgs, callback ) {
+  "use strict";
+  var loaded = 0;
+  var images = [];
+  imgs = Object.prototype.toString.apply( imgs ) === '[object Array]' ? imgs : [imgs];
+  var inc = function() {
+    loaded += 1;
+    if ( loaded === imgs.length && callback ) {
+      callback( images );
+    }
+  };
+  for ( var i = 0; i < imgs.length; i++ ) {
+    images[i] = new Image();
+    images[i].onabort = inc;
+    images[i].onerror = inc;
+    images[i].onload = inc;
+    images[i].src = imgs[i];
+  }
+}
 
 // ty paul <3
 window.requestAnimFrame = (function(){
@@ -419,11 +431,11 @@ var obstacle = function (x, y, t, d, s, w, h) {
       }.bind(this);
 
       switch(this.t) {
-        case 1: img.src = 'img/motorbike.png'; break;
-        case 2: img.src = 'img/car.png'; break;
-        case 3: img.src = 'img/car2.png'; break;
-        case 4: img.src = 'img/car3.png'; break;
-        case 5: img.src = 'img/truck.png'; break;
+        case 1: img.src = IMAGES.MOTORBIKE; break;
+        case 2: img.src = IMAGES.CAR1; break;
+        case 3: img.src = IMAGES.CAR2; break;
+        case 4: img.src = IMAGES.CAR3; break;
+        case 5: img.src = IMAGES.TRUCK; break;
       }
 
     }
@@ -466,9 +478,9 @@ var frock = function (x, y, w, h) {
       }.bind(this);
 
       if(!this.died) {
-        img.src = 'img/frock.png';
+        img.src = IMAGES.FROCK;
       } else {
-        img.src = 'img/frock_dead.png';
+        img.src = IMAGES.FROCK_DEAD;
       }
     }
 
@@ -571,7 +583,7 @@ var way = function (y1, y2) {
       destinationContext.drawImage(this.template, 0, this.y1);
     }.bind(this);
 
-    img.src = 'img/street.png';
+    img.src = IMAGES.STREET;
 
     // clean
     this.templateCtx.clearRect(0, 0, this.width, this.height);
@@ -605,7 +617,7 @@ var block = function (x, y, w, h) {
         if(game.debug) printBorder(this.templateCtx, this.w, this.h);
       }.bind(this);
 
-      img.src = 'img/stone.png';
+      img.src = IMAGES.STRONE;
     }
 
     // put pre rendered canvas on canvas
@@ -828,13 +840,25 @@ window.addEventListener('keydown', function (event) {
 }, false);
 
 function init () {
-  gameNode.height = gameBackgroundNode.height = canvas.height;
-  gameNode.width  = gameBackgroundNode.width = canvas.width;
 
-  game.level.update();
-  game.level.draw();
 
-  update();
+  var imgs = [];
+
+  for (var i in IMAGES) {
+    imgs.push(IMAGES[i]);
+  }
+
+  imgpreload(imgs, function () {
+
+    gameNode.height = gameBackgroundNode.height = canvas.height;
+    gameNode.width  = gameBackgroundNode.width = canvas.width;
+
+    game.level.update();
+    game.level.draw();
+
+    update();
+
+  });
 }
 
 window.addEventListener('DOMContentLoaded', init, false);
