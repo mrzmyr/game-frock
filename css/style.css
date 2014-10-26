@@ -15,11 +15,14 @@ body {
   background: url(../img/bg.png);
   margin: 0;
   font-family: Arial, sans-serif;
-  font-size: 11px;
+
+  /* fix for inline block elements */
+  font-size: 0px;
+
   color: #FFF;
 }
 
-#wrapper {
+.container {
   width: 640px;
   margin: 50px auto;
 }
@@ -49,15 +52,24 @@ header {
 
 #gameBackground {
   position: absolute;
-  margin-top: -640px;
+  margin-left: -640px;
   z-index: 1;
 }
 
-#lifes {
+#lifes,
+#level {
+  font-size: 11px;
   margin: 5px 0;
+  display: inline-block;
+  width: 50%;
+}
+
+#lifes {
+  text-align: right;
 }
 
 .description {
+  font-size: 11px;
   width: 640px;
   margin: 5px 0;
   opacity: 0.5;
@@ -69,9 +81,6 @@ span {
 }
 
 #mute { color: orange; }
-.right { float: right; }
-.left { float: left; }
-.clear { clear: both; }
 
 #status {
   position: fixed;
