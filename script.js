@@ -50,7 +50,8 @@ var game = {
         this.value += 1;
       }
 
-      if(game.levelReset) {
+      if(game.reset) {
+        game.reset = false;
         this.value = 1;
       }
 
@@ -193,10 +194,11 @@ var game = {
       }
     },
 
-    update: function (lifes) {
+    update: function () {
 
       if(game.newChance) {
-        this.value -= 1
+        game.newChance = false;
+        this.value -= 1;
       }
 
       if (game.reset) {
@@ -820,6 +822,7 @@ window.addEventListener('keydown', function (event) {
     game.pause = false;
     game.reset = true;
 
+    game.lifes.update();
     game.level.update();
     game.level.draw();
   }
