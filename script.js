@@ -8,7 +8,7 @@ var IMAGES = {
   CAR2: 'img/car2.png',
   CAR3: 'img/car3.png',
   TRUCK: 'img/truck.png',
-  STRONE: 'img/strone.png',
+  STONE: 'img/stone.png',
   STREET: 'img/street.png',
   FROCK: 'img/frock.png',
   FROCK_DEAD: 'img/frock_dead.png',
@@ -617,7 +617,7 @@ var block = function (x, y, w, h) {
         if(game.debug) printBorder(this.templateCtx, this.w, this.h);
       }.bind(this);
 
-      img.src = IMAGES.STRONE;
+      img.src = IMAGES.STONE;
     }
 
     // put pre rendered canvas on canvas
