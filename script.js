@@ -632,9 +632,14 @@ var block = function (x, y, w, h) {
  */
 
 var fpsMeter = function () {
+
   this._then = Date.now();
   this._fps = 0;
   this._fpsMeterNode = document.getElementById('fps');
+
+  if(!game.debug) {
+    this._fpsMeterNode.style.display = 'none';
+  }
 
   setInterval(function () {
     this._fpsMeterNode.innerHTML = this._fps;
