@@ -44,7 +44,7 @@ var game = {
       this.node.innerHTML = 'Level: <span>' + this.value + '</span>';
     },
 
-    update: function (lvl) {
+    update: function () {
 
       if(game.levelUp) {
         this.value += 1;
@@ -93,13 +93,13 @@ var game = {
         // adding the ways
         // ---------------------------------
 
-        var y1    = nextStart - 1;
-        var y2    = waySpaceCoords[s];
-        nextStart   = waySpaceCoords[s] + 2;
+        var waySpaceCoordsY1 = nextStart - 1;
+        var waySpaceCoordsY2 = waySpaceCoords[s];
+        nextStart = waySpaceCoords[s] + 2;
 
-        if(s == waySpaceCoords.length-1) y2 = 19; // end up with last line to bottom
+        if(s == waySpaceCoords.length-1) waySpaceCoordsY2 = 19; // end up with last line to bottom
 
-        ways.push(new way(y1 * 32, y2 * 32, true)); // x, y, l, h, w
+        ways.push(new way(waySpaceCoordsY1 * 32, waySpaceCoordsY2 * 32, true)); // x, y, l, h, w
 
         // adding the blocks
         // ---------------------------------
@@ -111,13 +111,19 @@ var game = {
           var blocksCount = Math.floor((this.value >= 37 ? 36 : this.value));
 
           // hate doubles
-          for(bc = 1; bc <= 19; bc++) coordsPossible.push(bc); // push all possibilities
-          for(i = 0; i < blocksCount; i++) coords.push(coordsPossible.splice(Math.floor(Math.random() * coordsPossible.length - 1), 1)[0]); // push only possibles
+          for(bc = 1; bc <= 19; bc++) {
+            // push all possibilities
+            coordsPossible.push(bc);
+          }
 
-          var y = waySpaceCoords[s];
+          for(i = 0; i < blocksCount; i++) {
+            // push only possibles
+            coords.push(coordsPossible.splice(Math.floor(Math.random() * coordsPossible.length - 1), 1)[0]);
+          }
 
-          for(c = 0; c < coords.length; c++) blocks.push(new block(coords[c]*32, y*32));
-
+          for(c = 0; c < coords.length; c++) {
+            blocks.push(new block(coords[c] * 32, waySpaceCoordsY2 * 32));
+          }
         }
       }
 
@@ -162,14 +168,14 @@ var game = {
       img.onload = function () {
 
         // draw gras
-        for (var h = canvas.perLevel.node.height / 32; h >= 0; h--) {
-          for (var w = canvas.perLevel.node.width / 32; w >= 0; w--) {
-            canvas.perLevel.ctx.drawImage(img, w * 32, h * 32);
+        for (var heightIndex = canvas.perLevel.node.height / 32; heightIndex >= 0; heightIndex--) {
+          for (var widthIndex = canvas.perLevel.node.width / 32; widthIndex >= 0; widthIndex--) {
+            canvas.perLevel.ctx.drawImage(img, widthIndex * 32, heightIndex * 32);
           }
         }
 
         // draw ways after gras was loaded and draw
-        for(w in ways) {
+        for(var w in ways) {
           ways[w].draw(canvas.perLevel.ctx);
         }
 
@@ -227,8 +233,7 @@ var game = {
       this.node.innerHTML = this.value;
     }
   }
-
-}
+};
 
 var canvas = {
 
@@ -252,7 +257,7 @@ var canvas = {
         canvas.perFrame.ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   }
-}
+};
 
 // some useful functions
 // ------------------------------------------------------------------------------------------
@@ -319,7 +324,7 @@ function printBorder(ctx, w, h) {
  *  @desc generates an number between min and max
  */
 function genRnd (min, max) {
-    return Math.random() * (max - min) + min;
+  return Math.random() * (max - min) + min;
 }
 
 /**
@@ -329,25 +334,25 @@ function genRnd (min, max) {
 
 function hits(x1, y1, w1, h1, x2, y2, w2, h2, border) {
 
-  var border = border || 0;
+  border = border || 0;
 
-    var left1   = x1;
-    var left2   = x2;
-    var right1  = x1 + w1;
-    var right2  = x2 + w2;
+  var left1   = x1;
+  var left2   = x2;
+  var right1  = x1 + w1;
+  var right2  = x2 + w2;
 
-    var top1  = y1;
-    var top2  = y2 + border;
-    var bottom1 = y1 + h1;
-    var bottom2 = y2 + h2 - border;
+  var top1  = y1;
+  var top2  = y2 + border;
+  var bottom1 = y1 + h1;
+  var bottom2 = y2 + h2 - border;
 
-    if (bottom1 <= top2) return false;
-    if (top1 >= bottom2) return false;
+  if (bottom1 <= top2) return false;
+  if (top1 >= bottom2) return false;
 
-    if (right1 <= left2) return false;
-    if (left1 >= right2) return false;
+  if (right1 <= left2) return false;
+  if (left1 >= right2) return false;
 
-    return true;
+  return true;
 }
 
 /**
@@ -409,7 +414,7 @@ var obstacle = function (x, y, t, d, s, w, h) {
       this.x -= this.s * delta; // right to left
     }
 
-  }
+  };
 
   this.draw = function (destContext /* destination context */) {
 
@@ -444,8 +449,8 @@ var obstacle = function (x, y, t, d, s, w, h) {
 
     // put pre rendered canvas on canvas
     destContext.drawImage(this.tpl, this.x, this.y);
-  }
-}
+  };
+};
 
 /**
  *  @name frock
@@ -488,7 +493,7 @@ var frock = function (x, y, w, h) {
 
     // put pre rendered canvas on canvas
     destinationContext.drawImage(this.template, this.x, this.y);
-  }
+  };
 
   this.move = function (direction) {
 
@@ -547,9 +552,8 @@ var frock = function (x, y, w, h) {
 
       this.reseted = true;
     }
-  }
-
-}
+  };
+};
 
 /**
  *  @name way
@@ -589,7 +593,7 @@ var way = function (y1, y2) {
 
     // clean
     this.templateCtx.clearRect(0, 0, this.width, this.height);
-  }
+  };
 };
 
 /**
@@ -624,9 +628,8 @@ var block = function (x, y, w, h) {
 
     // put pre rendered canvas on canvas
     destinationContext.drawImage(this.template, this.x, this.y);
-  }
-
-}
+  };
+};
 
 /**
  *  @name fpsMeter
@@ -685,7 +688,7 @@ var audio = function () {
   this.toggleMute = function () {
     this.mute = !this.mute;
     document.getElementById('mute').innerHTML = (this.mute ? 'OFF' : 'ON');
-  }
+  };
 
   this.toggleMute();
 
@@ -697,8 +700,8 @@ var audio = function () {
       this.nodes[soundId].currentTime = 0;
       this.nodes[soundId].play();
     }
-  }
-}
+  };
+};
 
 // actions! yay!
 // ------------------------------------------------------------------------------------------
@@ -814,7 +817,7 @@ window.addEventListener('keydown', function (event) {
   if(c == 77) audioObj.toggleMute();
 
   // new game
-  if(c == 27 && frockObj.died && game.lifes.value == 0) {
+  if(c == 27 && frockObj.died && game.lifes.value === 0) {
 
     frockObj.died = false;
     frockObj.move('reset');
