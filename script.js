@@ -1,5 +1,5 @@
-var gameNode = document.getElementById('gameCanvas');
-var gameBackgroundNode = document.getElementById('gameCanvasBackground');
+var gameNode = document.getElementById('game');
+var gameBackgroundNode = document.getElementById('gameBackground');
 
 var IMAGES = {
   GRAS: 'img/gras.png',
