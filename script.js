@@ -1,5 +1,5 @@
 var gameNode = document.getElementById('game');
-var gameBackgroundNode = document.getElementById('gameBackground');
+var gameBackgroundNode = document.getElementById('game-background');
 
 var IMAGES = {
   GRAS: 'img/gras.png',
@@ -192,11 +192,11 @@ var game = {
     updateView: function() {
 
       for(i = 0; i < 3; i++) {
-        this.nodes[i].src = 'img/life_inv.png';
+        this.nodes[i].style.display = 'none';
       }
 
       for(i = 0; i < this.value; i++) {
-        this.nodes[i].src = 'img/life.png';
+        this.nodes[i].style.display = 'inline-block';
       }
     },
 
@@ -213,26 +213,28 @@ var game = {
 
       this.updateView();
     }
-  },
-
-  status: {
-    node: document.getElementById('status'),
-    value: '',
-
-    onchange: function () {
-      this.node.classList.remove('animation');
-      this.node.classList.add('animation');
-      setTimeout(function () {
-        this.node.classList.remove('animation');
-      }.bind(this), 800);
-    },
-
-    update: function (v) {
-      this.onchange();
-      this.value = v;
-      this.node.innerHTML = this.value;
-    }
   }
+};
+
+function StatusScreen() {
+  this.node = document.getElementById('status-screen');
+};
+
+StatusScreen.prototype.show = function(text, showTime) {
+  this.node.classList.add('show');
+  this.node.innerHTML = text;
+
+  if(typeof showTime === 'number') {
+    setTimeout(this.hide.bind(this), showTime);
+  }
+
+  return this;
+};
+
+StatusScreen.prototype.hide = function () {
+  this.node.classList.remove('show');
+
+  return this;
 };
 
 var canvas = {
@@ -538,14 +540,16 @@ var frock = function (x, y, w, h) {
         case 'down' : this.y += step; break;
       }
 
-      audioObj.play('move');
+      if(direction !== 'reset') {
+        audioObj.play('move');
+      }
 
       // play random car meep audio - chance 1 to 100
       if(Math.floor(genRnd(1, 100)) === 50) audioObj.play('car');
     }
 
     if(direction === 'reset') {
-      scrollAnimateTo(canvas.height, 100);
+      // scrollAnimateTo(canvas.height, 100);
 
       this.x = canvas.width / 2;
       this.y = canvas.height - this.h;
@@ -642,14 +646,26 @@ var fpsMeter = function () {
   this._fps = 0;
   this._fpsMeterNode = document.getElementById('fps');
 
-  if(!game.debug) {
-    this._fpsMeterNode.style.display = 'none';
-  }
-
   setInterval(function () {
     this._fpsMeterNode.innerHTML = this._fps;
     this._fps = 0;
   }.bind(this), 1000);
+
+  this.isShowing = true;
+
+  this.show = function () {
+    if(!this.isShowing) {
+      this.isShowing = true;
+      this._fpsMeterNode.style.display = 'block';
+    }
+  };
+
+  this.hide = function () {
+    if(this.isShowing) {
+      this.isShowing = false;
+      this._fpsMeterNode.style.display = 'none';
+    }
+  };
 
   this.start = function () {
     this._now = Date.now();
@@ -673,7 +689,6 @@ var audio = function () {
   var SOUNDS = ['move', 'dead', 'levelup', 'car'];
 
   this.path = 'audio/';
-  this.mute = true;
 
   this.nodes = {};
 
@@ -685,17 +700,7 @@ var audio = function () {
     document.body.appendChild(this.nodes[SOUNDS[s]]);
   }
 
-  this.toggleMute = function () {
-    this.mute = !this.mute;
-    document.getElementById('mute').innerHTML = (this.mute ? 'OFF' : 'ON');
-  };
-
-  this.toggleMute();
-
   this.play = function (soundId) {
-
-    if(this.mute) return; // no sound on mute
-
     if(SOUNDS.indexOf(soundId) !== -1) {
       this.nodes[soundId].currentTime = 0;
       this.nodes[soundId].play();
@@ -710,13 +715,21 @@ var frockObj  = new frock();
 var audioObj  = new audio();
 var fpsMeterObj = new fpsMeter();
 
-var obstacles   = [];
-var ways    = [];
-var blocks    = [];
+var statusScreen = new StatusScreen();
+
+var obstacles = [];
+var ways = [];
+var blocks = [];
 
 function update() {
 
   fpsMeterObj.start();
+
+  if(game.debug) {
+    fpsMeterObj.show();
+  } else {
+    fpsMeterObj.hide();
+  }
 
   requestAnimFrame(update);
 
@@ -740,6 +753,13 @@ function update() {
         );
 
         if(frockObj.died) {
+
+          if(game.lifes.value > 0) {
+            statusScreen.show('<strong>' + (game.lifes.value - 1) + ' Lifes left</strong> <br>Press \'space\' to restart the Level')
+          } else if(game.lifes.value === 0) {
+            statusScreen.show('<strong>Game Over</strong> <br> Press \'space\' to restart the Game')
+          }
+
           audioObj.play('dead');
         }
       }
@@ -753,7 +773,7 @@ function update() {
     frockObj.move('reset');
     audioObj.play('levelup');
 
-    game.status.update('Level up');
+    statusScreen.show('Level ' + (game.level.value + 1), 500);
 
     game.levelUp = true;
 
@@ -813,14 +833,13 @@ window.addEventListener('keydown', function (event) {
     }
   }
 
-  // toggle sounds / music
-  if(c == 77) audioObj.toggleMute();
-
   // new game
-  if(c == 27 && frockObj.died && game.lifes.value === 0) {
+  if(c == 32 && frockObj.died && game.lifes.value === 0) {
 
     frockObj.died = false;
     frockObj.move('reset');
+
+    statusScreen.hide();
 
     game.pause = false;
     game.reset = true;
@@ -828,36 +847,44 @@ window.addEventListener('keydown', function (event) {
     game.lifes.update();
     game.level.update();
     game.level.draw();
-  }
 
   // new chance
-  if(c == 82 && frockObj.died && game.lifes.value > 0) {
+  } else if(c == 32 && frockObj.died && game.lifes.value > 0) {
 
     frockObj.died = false;
     frockObj.move('reset');
+
+    statusScreen.hide();
 
     game.newChance = true;
     game.pause = false;
 
     game.lifes.update();
     game.level.draw();
-  }
 
   // pause game, if space was pressed & frock is alive
-  if(c == 32 && !frockObj.died) {
+  } else if(c == 32 && !frockObj.died) {
     game.pause = !game.pause;
-    game.status.update(game.pause ? 'pause' : 'running');
+
+    if(game.pause) {
+      statusScreen.show('Pause');
+    } else {
+      statusScreen.hide();
+    }
   }
 }, false);
 
 function init () {
-
 
   var imgs = [];
 
   for (var i in IMAGES) {
     imgs.push(IMAGES[i]);
   }
+
+  game.pause = true;
+
+  statusScreen.show('Use arrow keys to move<br>Press \'space\' to start');
 
   imgpreload(imgs, function () {
 
