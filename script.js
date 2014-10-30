@@ -1,5 +1,13 @@
-var gameNode = document.getElementById('game');
-var gameBackgroundNode = document.getElementById('game-background');
+var gameCanvas = document.getElementById('game');
+var gameBackgroundCanvas = document.getElementById('game-background');
+
+var TILE_WIDTH = 32;
+var TILE_HEIGHT = 32;
+var TILE_ROWS = 20;
+var TILE_COLUMNS = 20;
+
+var CANVAS_HEIGHT = gameCanvas.clientHeight;
+var CANVAS_WIDTH = gameCanvas.clientWidth;
 
 var IMAGES = {
   GRAS: 'img/gras.png',
@@ -12,16 +20,6 @@ var IMAGES = {
   STREET: 'img/street.png',
   FROCK: 'img/frock.png',
   FROCK_DEAD: 'img/frock_dead.png',
-};
-
-var sys = {
-  version: '0.1',
-  dimension: {
-    x: 32,
-    y: 32,
-    rows: 20,
-    columns: 20
-  }
 };
 
 var game = {
@@ -63,48 +61,61 @@ var game = {
       blocks = [];
 
       // way spaces
-      var waySpacesPerLevel = 8,
-        waySpacesDif = Math.ceil(this.value / waySpacesPerLevel),
-        waySpacesMax = 50 / waySpacesPerLevel,
-        waySpaces = (waySpacesMax - waySpacesDif >= 0 ? (waySpacesMax - waySpacesDif) : 0),
-        waySpaceCoords = [];
+      var waySpaces = 5;
+      var waySpaceCoords = [];
 
-      var rands = [];
-      var borders = 2;
-      var nextStart = 2;
-      var max = (canvas.height / frockObj.h) - borders; // complete height - top
+      var possibleWayRows = [];
+      var max = TILE_COLUMNS - 2;
 
       // push all possibilities
-      while(max >= borders) {
-        rands.push(max);
+      while(max >= 2) {
+        possibleWayRows.push(max);
         max -= 2;
       }
 
+      console.log(possibleWayRows);
+      console.log(waySpaces);
+
       // add spaces by random
-      for(i = 0; i < waySpaces; i++) {
-        waySpaceCoords.push(rands.splice(Math.floor(Math.random() * rands.length - 1), 1)[0]);
+      for(i = 0; i <= waySpaces; i++) {
+        waySpaceCoords.push(
+          possibleWayRows.splice(
+            Math.floor(Math.random() * possibleWayRows.length - 1),
+            1
+          )[0]
+        );
       }
 
       // sort by int
       waySpaceCoords = waySpaceCoords.sort(function (a, b) { return a - b; });
+
+      var nextStart = 2;
 
       for(s = 0; s < waySpaceCoords.length; s++) {
 
         // adding the ways
         // ---------------------------------
 
-        var waySpaceCoordsY1 = nextStart - 1;
-        var waySpaceCoordsY2 = waySpaceCoords[s];
+        var wayRow1 = nextStart - 1;
+        var wayRow2 = waySpaceCoords[s];
+
         nextStart = waySpaceCoords[s] + 2;
 
-        if(s == waySpaceCoords.length-1) waySpaceCoordsY2 = 19; // end up with last line to bottom
+        if(s == waySpaceCoords.length - 1) {
+          wayRow2 = 19; // end up with last line to bottom
+        }
 
-        ways.push(new way(waySpaceCoordsY1 * 32, waySpaceCoordsY2 * 32, true)); // x, y, l, h, w
+        ways.push(
+          new way(
+            wayRow1 * TILE_HEIGHT,
+            wayRow2 * TILE_HEIGHT
+          )
+        );
 
         // adding the blocks
         // ---------------------------------
 
-        if(this.value > 1 && s != waySpaceCoords.length-1) { // after first level & wothout last line
+        if(this.value > 1 && s != waySpaceCoords.length - 1) { // after first level & wothout last line
 
           var coords = [];
           var coordsPossible = [];
@@ -122,7 +133,7 @@ var game = {
           }
 
           for(c = 0; c < coords.length; c++) {
-            blocks.push(new block(coords[c] * 32, waySpaceCoordsY2 * 32));
+            blocks.push(new block(coords[c] * 32, wayRow2 * 32));
           }
         }
       }
@@ -132,12 +143,12 @@ var game = {
 
       for(var w in ways) {
 
-        var y1 = ways[w].y1/32;
-        var y2 = ways[w].y2/32;
+        var y1 = ways[w].y1 / TILE_HEIGHT;
+        var y2 = ways[w].y2 / TILE_HEIGHT;
 
         for(i = y1; i < y2; i++) {
 
-          var x = Math.floor(genRnd(0, canvas.width));
+          var x = Math.floor(genRnd(0, CANVAS_WIDTH));
           var y = i;
           var direction = (genRnd(1, 10) > 5 ? 'ltr' : 'rtl');
           var speed = 0.005 * Math.pow(this.value, 2) + 0.2;
@@ -148,14 +159,14 @@ var game = {
           for(r = 0; r < count; r++) {
             var type = Math.round(genRnd(1,5));
 
-            x += sys.dimension.x * 2; // + 64, every obstacle
+            x += TILE_WIDTH * 2; // + 64, every obstacle
 
             // is out of view, set to right border
-            if((sys.dimension.x * sys.dimension.columns) < x) {
-              x -= sys.dimension.x * sys.dimension.columns + 32;
+            if((TILE_WIDTH * TILE_COLUMNS) < x) {
+              x -= TILE_WIDTH * TILE_COLUMNS + TILE_WIDTH;
             }
 
-            obstacles.push(new obstacle(x + oldDistance, y * sys.dimension.y, type, direction, speed));
+            obstacles.push(new obstacle(x + oldDistance, y * TILE_HEIGHT, type, direction, speed));
           }
         }
       }
@@ -167,16 +178,18 @@ var game = {
 
       img.onload = function () {
 
+        var gameBackgroundCanvasContext = gameBackgroundCanvas.getContext('2d');
+
         // draw gras
-        for (var heightIndex = canvas.perLevel.node.height / 32; heightIndex >= 0; heightIndex--) {
-          for (var widthIndex = canvas.perLevel.node.width / 32; widthIndex >= 0; widthIndex--) {
-            canvas.perLevel.ctx.drawImage(img, widthIndex * 32, heightIndex * 32);
+        for (var heightIndex = gameBackgroundCanvas.height / 32; heightIndex >= 0; heightIndex--) {
+          for (var widthIndex = gameBackgroundCanvas.width / 32; widthIndex >= 0; widthIndex--) {
+            gameBackgroundCanvasContext.drawImage(img, widthIndex * 32, heightIndex * 32);
           }
         }
 
         // draw ways after gras was loaded and draw
         for(var w in ways) {
-          ways[w].draw(canvas.perLevel.ctx);
+          ways[w].draw(gameBackgroundCanvasContext);
         }
 
       }.bind(this);
@@ -235,30 +248,6 @@ StatusScreen.prototype.hide = function () {
   this.node.classList.remove('show');
 
   return this;
-};
-
-var canvas = {
-
-  height: gameNode.clientHeight,
-  width: gameNode.clientWidth,
-
-  perLevel: {
-    node: gameBackgroundNode,
-    ctx: gameBackgroundNode.getContext('2d'),
-
-    clear: function () {
-      canvas.perLevel.ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  },
-
-  perFrame: {
-    node: gameNode,
-    ctx: gameNode.getContext('2d'),
-
-    clear: function () {
-        canvas.perFrame.ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  }
 };
 
 // some useful functions
@@ -365,18 +354,18 @@ function hits(x1, y1, w1, h1, x2, y2, w2, h2, border) {
  *    durations - means the time of scrolling (animation)
  *  @thanks: http://goo.gl/OYz6l
  */
-var scrollAnimateTo = function(offset, duration) {
-    this.step = (offset - window.scrollY ) / duration;
-    this.start = new Date().getTime();
-    this.startY = window.scrollY;
-    this.intervalHandler = window.setInterval(function() {
-        var current = new Date().getTime();
-        if(current - this.start > duration) {
-            clearInterval(this.intervalHandler);
-            return;
-        }
-        window.scrollTo(0, this.startY  + (current - this.start) * this.step);
-    }, 10);
+ var scrollAnimateTo = function(offset, duration) {
+  this.step = (offset - window.scrollY ) / duration;
+  this.start = new Date().getTime();
+  this.startY = window.scrollY;
+  this.intervalHandler = window.setInterval(function() {
+    var current = new Date().getTime();
+    if(current - this.start > duration) {
+      clearInterval(this.intervalHandler);
+      return;
+    }
+    window.scrollTo(0, this.startY  + (current - this.start) * this.step);
+  }, 10);
 };
 
 /* objects settings
@@ -387,26 +376,32 @@ var scrollAnimateTo = function(offset, duration) {
  *  @desc generates an object of an obstacle
  */
 
-var obstacle = function (x, y, t, d, s, w, h) {
+var obstacle = function (x, y, t, d, s) {
 
   this.x = x;
   this.y = y;
 
-  this.w = w || 32;
-  this.h = h || 32;
+  this.w = TILE_WIDTH;
+  this.h = TILE_HEIGHT;
+
   this.d = d || 'ltr';
   this.s = s || 0.5; // speed
   this.t = t || 1; // type of obstacle
 
-  this.tpl = prt(this.w, this.h); // for pre rendering
+  this.tpl = prt(this.w, this.h);
   this.ctx = this.tpl.getContext('2d');
 
   var img;
 
   this.drive = function (delta) {
 
-    if(this.x < -this.w) this.x = canvas.width;
-    if(this.x > canvas.width + this.w) this.x = -this.w;
+    if(this.x < -this.w) {
+      this.x = CANVAS_WIDTH;
+    }
+
+    if(this.x > CANVAS_WIDTH + this.w) {
+      this.x = -this.w;
+    }
 
     // drive the obstacles
 
@@ -418,7 +413,7 @@ var obstacle = function (x, y, t, d, s, w, h) {
 
   };
 
-  this.draw = function (destContext /* destination context */) {
+  this.draw = function (destContext) {
 
     if(img === undefined) {
 
@@ -435,8 +430,6 @@ var obstacle = function (x, y, t, d, s, w, h) {
         } else {
           this.ctx.drawImage(img, 0, 0);
         }
-
-        if(game.debug) printBorder(this.ctx, this.w, this.h);
       }.bind(this);
 
       switch(this.t) {
@@ -459,15 +452,16 @@ var obstacle = function (x, y, t, d, s, w, h) {
  *  @desc generates the frock object
  */
 
-var frock = function (x, y, w, h) {
+var frock = function (x, y) {
 
-  this.w = 32;
-  this.h = 32;
-  this.x = canvas.width / 2 || x;
-  this.y = canvas.height - 32 || y; // middle
+  this.width = TILE_WIDTH;
+  this.height = TILE_WIDTH;
+
+  this.x = CANVAS_HEIGHT / 2;
+  this.y = CANVAS_HEIGHT - this.height;
 
   this.died = false;
-  this.template = prt(this.w, this.h);
+  this.template = prt(this.width, this.height);
   this.templateCtx = this.template.getContext('2d');
 
   var img;
@@ -482,7 +476,7 @@ var frock = function (x, y, w, h) {
       img = new Image();
 
       img.onload = function () {
-        this.templateCtx.clearRect(0, 0, this.w, this.h);
+        this.templateCtx.clearRect(0, 0, this.width, this.height);
         this.templateCtx.drawImage(img, 0, 0);
       }.bind(this);
 
@@ -499,7 +493,7 @@ var frock = function (x, y, w, h) {
 
   this.move = function (direction) {
 
-    var step = this.h;
+    var step = this.height;
 
     var tempCoords = { x: this.x, y: this.y };
     var wouldHit = false;
@@ -516,8 +510,8 @@ var frock = function (x, y, w, h) {
       wouldHit = hits(
         tempCoords.x,
         tempCoords.y,
-        this.w,
-        this.h,
+        this.width,
+        this.height,
         blocks[b].x,
         blocks[b].y,
         blocks[b].w,
@@ -527,10 +521,10 @@ var frock = function (x, y, w, h) {
 
     // disable on game borders
     wouldHit = wouldHit ||
-          hits(tempCoords.x, tempCoords.y, this.w, this.h, 0, -this.h, canvas.width, this.h) || // top wall
-          hits(tempCoords.x, tempCoords.y, this.w, this.h, -this.w, 0, this.w, canvas.height) || // left wall
-          hits(tempCoords.x, tempCoords.y, this.w, this.h, canvas.width, 0, this.w, canvas.height) || // right wall
-          hits(tempCoords.x, tempCoords.y, this.w, this.h, 0, canvas.height, canvas.width, this.h); // bottom wall
+          hits(tempCoords.x, tempCoords.y, this.width, this.height, 0, -this.height, CANVAS_WIDTH, this.height) || // top wall
+          hits(tempCoords.x, tempCoords.y, this.width, this.height, -this.width, 0, this.width, CANVAS_HEIGHT) || // left wall
+          hits(tempCoords.x, tempCoords.y, this.width, this.height, CANVAS_WIDTH, 0, this.width, CANVAS_HEIGHT) || // right wall
+          hits(tempCoords.x, tempCoords.y, this.width, this.height, 0, CANVAS_HEIGHT, CANVAS_WIDTH, this.height); // bottom wall
 
     if(!wouldHit) {
       switch(direction) {
@@ -549,10 +543,10 @@ var frock = function (x, y, w, h) {
     }
 
     if(direction === 'reset') {
-      // scrollAnimateTo(canvas.height, 100);
+      // scrollAnimateTo(CANVAS_HEIGHT, 100);
 
-      this.x = canvas.width / 2;
-      this.y = canvas.height - this.h;
+      this.x = CANVAS_WIDTH / 2;
+      this.y = CANVAS_HEIGHT - this.height;
 
       this.reseted = true;
     }
@@ -569,7 +563,7 @@ var way = function (y1, y2) {
   this.y1 = y1;
   this.y2 = y2;
   this.height = this.y2 - this.y1;
-  this.width = canvas.width;
+  this.width = CANVAS_WIDTH;
 
   this.template = prt(this.width, this.height);
   this.templateCtx = this.template.getContext('2d');
@@ -580,9 +574,9 @@ var way = function (y1, y2) {
 
     img.onload = function () {
 
-      for (var h = this.height / 32; h >= 0; h--) {
-        for (var w = this.width / 32; w >= 0; w--) {
-          this.templateCtx.drawImage(img, w * 32, h * 32);
+      for (var h = this.height / TILE_HEIGHT; h >= 0; h--) {
+        for (var w = this.width / TILE_WIDTH; w >= 0; w--) {
+          this.templateCtx.drawImage(img, w * TILE_WIDTH, h * TILE_HEIGHT);
         }
       }
 
@@ -743,8 +737,8 @@ function update() {
         frockObj.died = hits(
           frockObj.x,
           frockObj.y,
-          frockObj.w,
-          frockObj.h,
+          frockObj.width,
+          frockObj.height,
           obstacles[i].x,
           obstacles[i].y,
           obstacles[i].w,
@@ -768,7 +762,7 @@ function update() {
   }
 
   // level up
-  if(frockObj.y < frockObj.h && !frockObj.d) {
+  if(frockObj.y < frockObj.height && !frockObj.died) {
 
     frockObj.move('reset');
     audioObj.play('levelup');
@@ -796,24 +790,30 @@ function update() {
 
 function draw() {
 
+  var gameCanvasContext = gameCanvas.getContext('2d');
+
   // clear canvas
-  canvas.perFrame.clear();
+  gameCanvasContext.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   // draw frock
-  frockObj.draw(canvas.perFrame.ctx);
+  frockObj.draw(gameCanvasContext);
 
   // draw blocks
-  for(var b in blocks) blocks[b].draw(canvas.perFrame.ctx);
+  for(var b in blocks) {
+    blocks[b].draw(gameCanvasContext);
+  }
 
   // draw obstacles
-  for(var o in obstacles) obstacles[o].draw(canvas.perFrame.ctx);
+  for(var o in obstacles) {
+    obstacles[o].draw(gameCanvasContext);
+  }
 }
 
 window.addEventListener('keydown', function (event) {
 
   event = event || window.event;
   var c = event.keyCode;
-  var step = frockObj.h;
+  var step = frockObj.height;
 
   // prevent scrolling, up, down, space
   if(c === 40 || c === 38 || c === 32) event.preventDefault();
@@ -888,8 +888,8 @@ function init () {
 
   imgpreload(imgs, function () {
 
-    gameNode.height = gameBackgroundNode.height = canvas.height;
-    gameNode.width  = gameBackgroundNode.width = canvas.width;
+    gameCanvas.height = gameBackgroundCanvas.height = CANVAS_WIDTH;
+    gameCanvas.width = gameBackgroundCanvas.width = CANVAS_WIDTH;
 
     game.level.update();
     game.level.draw();
