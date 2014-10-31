@@ -197,30 +197,29 @@ var game = {
 };
 
 function LifesService() {
-
   this.count = 3;
   this.nodes = document.getElementById('lifes').getElementsByTagName('img');
-
-  this.updateView = function() {
-
-    for(i = 0; i < 3; i++) {
-      this.nodes[i].style.display = 'none';
-    }
-
-    for(i = 0; i < this.count; i++) {
-      this.nodes[i].style.display = 'inline-block';
-    }
-  };
-
-  this.getCount = function (count) {
-    return this.count;
-  },
-
-  this.setCount = function (count) {
-    this.count = count;
-    this.updateView();
-  };
 }
+
+LifesService.prototype.updateView = function() {
+
+  for(i = 0; i < 3; i++) {
+    this.nodes[i].style.display = 'none';
+  }
+
+  for(i = 0; i < this.count; i++) {
+    this.nodes[i].style.display = 'inline-block';
+  }
+};
+
+LifesService.prototype.getCount = function (count) {
+  return this.count;
+};
+
+LifesService.prototype.setCount = function (count) {
+  this.count = count;
+  this.updateView();
+};
 
 /**
  * StatusScreen
@@ -228,11 +227,16 @@ function LifesService() {
  */
 function StatusScreen() {
   this.node = document.getElementById('status-screen');
+
+  this.titleNode = this.node.children[0];
+  this.subTitleNode = this.node.children[1];
 }
 
-StatusScreen.prototype.show = function(text, showTime) {
+StatusScreen.prototype.show = function(title, subtitle, showTime) {
   this.node.classList.add('show');
-  this.node.innerHTML = text;
+
+  this.titleNode.innerHTML = title || '';
+  this.subTitleNode.innerHTML = subtitle || '';
 
   if(typeof showTime === 'number') {
     setTimeout(this.hide.bind(this), showTime);
@@ -394,7 +398,7 @@ function Obstacle (x, y, type, direction, speed) {
   this.templateCtx = this.template.getContext('2d');
 
   this.image = undefined;
-};
+}
 
 Obstacle.prototype.drive = function (delta) {
 
@@ -574,7 +578,7 @@ function Way (y1, y2) {
   this.templateCtx = this.template.getContext('2d');
 
   this.image = undefined;
-};
+}
 
 Way.prototype.draw = function (destinationContext) {
 
@@ -760,9 +764,9 @@ function update() {
           var lifesCount = lifesService.getCount();
 
           if(lifesCount > 0) {
-            statusScreen.show('<strong>' + (lifesCount - 1) + ' Lifes left</strong> <br>Press \'space\' to restart the Level')
+            statusScreen.show((lifesCount - 1) + ' Lifes left', 'Press \'space\' to restart the level');
           } else if(lifesCount === 0) {
-            statusScreen.show('<strong>Game Over</strong> <br> Press \'space\' to restart the Game')
+            statusScreen.show('Game Over', 'Press \'space\' to restart the Game');
           }
 
           soundMaschine.play('dead');
@@ -778,7 +782,7 @@ function update() {
     frock.move('reset');
     soundMaschine.play('levelup');
 
-    statusScreen.show('Level ' + (game.level.value + 1), 500);
+    statusScreen.show('Level', game.level.value + 1, 500);
 
     game.levelUp = true;
 
@@ -882,7 +886,7 @@ window.addEventListener('keydown', function (event) {
     game.pause = !game.pause;
 
     if(game.pause) {
-      statusScreen.show('Pause');
+      statusScreen.show('Pause', 'Press \'space\' to continue');
     } else {
       statusScreen.hide();
     }
@@ -899,7 +903,7 @@ function init () {
 
   game.pause = true;
 
-  statusScreen.show('Use arrow keys to move<br>Press \'space\' to start');
+  statusScreen.show('Use arrow keys to move', 'Press \'space\' to start');
 
   imgpreload(imgs, function () {
 
