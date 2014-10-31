@@ -73,9 +73,6 @@ var game = {
         max -= 2;
       }
 
-      console.log(possibleWayRows);
-      console.log(waySpaces);
-
       // add spaces by random
       for(i = 0; i <= waySpaces; i++) {
         waySpaceCoords.push(
@@ -106,7 +103,7 @@ var game = {
         }
 
         ways.push(
-          new way(
+          new Way(
             wayRow1 * TILE_HEIGHT,
             wayRow2 * TILE_HEIGHT
           )
@@ -166,7 +163,7 @@ var game = {
               x -= TILE_WIDTH * TILE_COLUMNS + TILE_WIDTH;
             }
 
-            obstacles.push(new obstacle(x + oldDistance, y * TILE_HEIGHT, type, direction, speed));
+            obstacles.push(new Obstacle(x + oldDistance, y * TILE_HEIGHT, type, direction, speed));
           }
         }
       }
@@ -196,42 +193,42 @@ var game = {
 
       img.src = IMAGES.GRAS;
     }
-  },
-
-  lifes: {
-    value: 3,
-    nodes: document.getElementById('lifes').getElementsByTagName('img'),
-
-    updateView: function() {
-
-      for(i = 0; i < 3; i++) {
-        this.nodes[i].style.display = 'none';
-      }
-
-      for(i = 0; i < this.value; i++) {
-        this.nodes[i].style.display = 'inline-block';
-      }
-    },
-
-    update: function () {
-
-      if(game.newChance) {
-        game.newChance = false;
-        this.value -= 1;
-      }
-
-      if (game.reset) {
-        this.value = 3;
-      }
-
-      this.updateView();
-    }
   }
 };
 
+function LifesService() {
+
+  this.count = 3;
+  this.nodes = document.getElementById('lifes').getElementsByTagName('img');
+
+  this.updateView = function() {
+
+    for(i = 0; i < 3; i++) {
+      this.nodes[i].style.display = 'none';
+    }
+
+    for(i = 0; i < this.count; i++) {
+      this.nodes[i].style.display = 'inline-block';
+    }
+  };
+
+  this.getCount = function (count) {
+    return this.count;
+  },
+
+  this.setCount = function (count) {
+    this.count = count;
+    this.updateView();
+  };
+}
+
+/**
+ * StatusScreen
+ * @description StatusScreen show status messages
+ */
 function StatusScreen() {
   this.node = document.getElementById('status-screen');
-};
+}
 
 StatusScreen.prototype.show = function(text, showTime) {
   this.node.classList.add('show');
@@ -278,10 +275,10 @@ function imgpreload( imgs, callback ) {
 window.requestAnimFrame = (function(){
   return window.requestAnimationFrame ||
   window.webkitRequestAnimationFrame ||
-  window.mozRequestAnimationFrame    ||
-  window.oRequestAnimationFrame      ||
-  window.msRequestAnimationFrame     ||
-  function(/* function */ callback, /* DOMElement */ element){
+  window.mozRequestAnimationFrame ||
+  window.oRequestAnimationFrame ||
+  window.msRequestAnimationFrame ||
+  function(callback, element){
     window.setTimeout(callback, 1000 / 60);
   };
 })();
@@ -290,10 +287,11 @@ window.requestAnimFrame = (function(){
  *  @name prt - preRenderingTemplate
  *  @desc generates a pre rendering canvas with width of w and height of h
  */
-function prt(w, h) {
-  var c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  return c;
+function prt(width, height) {
+  var canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
 }
 
 /**
@@ -376,75 +374,75 @@ function hits(x1, y1, w1, h1, x2, y2, w2, h2, border) {
  *  @desc generates an object of an obstacle
  */
 
-var obstacle = function (x, y, t, d, s) {
+function Obstacle (x, y, type, direction, speed) {
 
   this.x = x;
   this.y = y;
 
-  this.w = TILE_WIDTH;
-  this.h = TILE_HEIGHT;
+  this.width = TILE_WIDTH;
+  this.height = TILE_HEIGHT;
 
-  this.d = d || 'ltr';
-  this.s = s || 0.5; // speed
-  this.t = t || 1; // type of obstacle
+  this.direction = direction || 'ltr';
+  this.type = type || 1;
+  this.speed = speed || 0.5;
 
-  this.tpl = prt(this.w, this.h);
-  this.ctx = this.tpl.getContext('2d');
+  if(this.direction === 'rtl') {
+    this.speed *= -1;
+  }
 
-  var img;
+  this.template = prt(this.width, this.height);
+  this.templateCtx = this.template.getContext('2d');
 
-  this.drive = function (delta) {
+  this.image = undefined;
+};
 
-    if(this.x < -this.w) {
-      this.x = CANVAS_WIDTH;
-    }
+Obstacle.prototype.drive = function (delta) {
 
-    if(this.x > CANVAS_WIDTH + this.w) {
-      this.x = -this.w;
-    }
+  if(this.x < -this.width) {
+    this.x = CANVAS_WIDTH;
+  }
 
-    // drive the obstacles
+  if(this.x > CANVAS_WIDTH + this.width) {
+    this.x = -this.width;
+  }
 
-    if(this.d === 'ltr') {
-      this.x += this.s * delta; // left to right
-    } else {
-      this.x -= this.s * delta; // right to left
-    }
+  this.x += this.speed * delta;
+};
 
-  };
+Obstacle.prototype.draw = function (destContext) {
 
-  this.draw = function (destContext) {
+  if(this.image === undefined) {
 
-    if(img === undefined) {
+    this.image = new Image();
 
-      img = new Image();
-
-      img.onload = function () {
-
-        if(this.d === 'ltr') { // turn around
-          this.ctx.translate(0 , 0);
-          this.ctx.rotate(180 * Math.PI/180);
-          this.ctx.drawImage(img, -this.w, -this.h, this.w, this.h);
-          this.ctx.rotate(180 * Math.PI/180);
-          this.ctx.translate(0, 0);
-        } else {
-          this.ctx.drawImage(img, 0, 0);
-        }
-      }.bind(this);
-
-      switch(this.t) {
-        case 1: img.src = IMAGES.MOTORBIKE; break;
-        case 2: img.src = IMAGES.CAR1; break;
-        case 3: img.src = IMAGES.CAR2; break;
-        case 4: img.src = IMAGES.CAR3; break;
-        case 5: img.src = IMAGES.TRUCK; break;
+    this.image.onload = function () {
+      // turn around
+      if(this.direction === 'ltr') {
+        this.templateCtx.translate(0 , 0);
+        this.templateCtx.rotate(180 * Math.PI / 180);
+        this.templateCtx.drawImage(this.image, -this.width, -this.height, this.width, this.height);
+        this.templateCtx.rotate(180 * Math.PI / 180);
+        this.templateCtx.translate(0, 0);
+      } else {
+        this.templateCtx.drawImage(this.image, 0, 0, this.width, this.height);
       }
+    }.bind(this);
 
+    switch(this.type) {
+      case 1: this.image.src = IMAGES.MOTORBIKE; break;
+      case 2: this.image.src = IMAGES.CAR1; break;
+      case 3: this.image.src = IMAGES.CAR2; break;
+      case 4: this.image.src = IMAGES.CAR3; break;
+      case 5: this.image.src = IMAGES.TRUCK; break;
     }
 
-    // put pre rendered canvas on canvas
-    destContext.drawImage(this.tpl, this.x, this.y);
-  };
+    if(game.debug) {
+      printBorder(this.templateCtx, this.width, this.height);
+    }
+  }
+
+  // put pre rendered canvas on game canvas
+  destContext.drawImage(this.template, this.x, this.y);
 };
 
 /**
@@ -452,7 +450,7 @@ var obstacle = function (x, y, t, d, s) {
  *  @desc generates the frock object
  */
 
-var frock = function (x, y) {
+function Frock (x, y) {
 
   this.width = TILE_WIDTH;
   this.height = TILE_WIDTH;
@@ -460,97 +458,104 @@ var frock = function (x, y) {
   this.x = CANVAS_HEIGHT / 2;
   this.y = CANVAS_HEIGHT - this.height;
 
-  this.died = false;
+  this.dead = false;
   this.template = prt(this.width, this.height);
   this.templateCtx = this.template.getContext('2d');
 
-  var img;
-  var lastDied;
+  this.image = undefined;
+}
 
-  this.draw = function (destinationContext) {
+Frock.prototype.draw = function (destinationContext) {
 
-    if(img === undefined || this.reseted || this.died) {
+  if(this.image === undefined || this.reseted || this.dead) {
 
-      this.reseted = false;
+    this.reseted = false;
 
-      img = new Image();
+    this.image = new Image();
 
-      img.onload = function () {
-        this.templateCtx.clearRect(0, 0, this.width, this.height);
-        this.templateCtx.drawImage(img, 0, 0);
-      }.bind(this);
+    this.image.onload = function () {
+      this.templateCtx.clearRect(0, 0, this.width, this.height);
+      this.templateCtx.drawImage(this.image, 0, 0);
 
-      if(!this.died) {
-        img.src = IMAGES.FROCK;
-      } else {
-        img.src = IMAGES.FROCK_DEAD;
+      if(game.debug) {
+        printBorder(this.templateCtx, this.width, this.height);
       }
+    }.bind(this);
+
+    if(!this.dead) {
+      this.image.src = IMAGES.FROCK;
+    } else {
+      this.image.src = IMAGES.FROCK_DEAD;
     }
+  }
 
-    // put pre rendered canvas on canvas
-    destinationContext.drawImage(this.template, this.x, this.y);
-  };
+  // put pre rendered canvas on canvas
+  destinationContext.drawImage(this.template, this.x, this.y);
+};
 
-  this.move = function (direction) {
+Frock.prototype.move = function (direction) {
 
-    var step = this.height;
+  var step = this.height;
 
-    var tempCoords = { x: this.x, y: this.y };
-    var wouldHit = false;
+  var tempCoords = { x: this.x, y: this.y };
+  var wouldHit = false;
 
+  switch(direction) {
+    case 'left' : tempCoords.x = this.x - step; break;
+    case 'right': tempCoords.x = this.x + step; break;
+    case 'up' : tempCoords.y = this.y - step; break;
+    case 'down' : tempCoords.y = this.y + step; break;
+  }
+
+  // collision with blocks
+  for(b = 0; b < blocks.length; b++) {
+    wouldHit = hits(
+      tempCoords.x,
+      tempCoords.y,
+      this.width,
+      this.height,
+      blocks[b].x,
+      blocks[b].y,
+      blocks[b].w,
+      blocks[b].h
+    ) || wouldHit;
+  }
+
+  // would hit a the border of the canvas
+  wouldHit = wouldHit ||
+        hits(tempCoords.x, tempCoords.y, this.width, this.height, 0, -this.height, CANVAS_WIDTH, this.height) || // top wall
+        hits(tempCoords.x, tempCoords.y, this.width, this.height, -this.width, 0, this.width, CANVAS_HEIGHT) || // left wall
+        hits(tempCoords.x, tempCoords.y, this.width, this.height, CANVAS_WIDTH, 0, this.width, CANVAS_HEIGHT) || // right wall
+        hits(tempCoords.x, tempCoords.y, this.width, this.height, 0, CANVAS_HEIGHT, CANVAS_WIDTH, this.height); // bottom wall
+
+  if(!wouldHit) {
     switch(direction) {
-      case 'left' : tempCoords.x = this.x - step; break;
-      case 'right': tempCoords.x = this.x + step; break;
-      case 'up' : tempCoords.y = this.y - step; break;
-      case 'down' : tempCoords.y = this.y + step; break;
+      case 'left': this.x -= step; break;
+      case 'right': this.x += step; break;
+      case 'up': this.y -= step; break;
+      case 'down': this.y += step; break;
     }
 
-    // collision with blocks
-    for(b = 0; b < blocks.length; b++) {
-      wouldHit = hits(
-        tempCoords.x,
-        tempCoords.y,
-        this.width,
-        this.height,
-        blocks[b].x,
-        blocks[b].y,
-        blocks[b].w,
-        blocks[b].h
-      ) || wouldHit;
+    // when resetting don't play a move sound
+    if(direction !== 'reset') {
+      soundMaschine.play('move');
     }
 
-    // disable on game borders
-    wouldHit = wouldHit ||
-          hits(tempCoords.x, tempCoords.y, this.width, this.height, 0, -this.height, CANVAS_WIDTH, this.height) || // top wall
-          hits(tempCoords.x, tempCoords.y, this.width, this.height, -this.width, 0, this.width, CANVAS_HEIGHT) || // left wall
-          hits(tempCoords.x, tempCoords.y, this.width, this.height, CANVAS_WIDTH, 0, this.width, CANVAS_HEIGHT) || // right wall
-          hits(tempCoords.x, tempCoords.y, this.width, this.height, 0, CANVAS_HEIGHT, CANVAS_WIDTH, this.height); // bottom wall
-
-    if(!wouldHit) {
-      switch(direction) {
-        case 'left' : this.x -= step; break;
-        case 'right': this.x += step; break;
-        case 'up' : this.y -= step; break;
-        case 'down' : this.y += step; break;
-      }
-
-      if(direction !== 'reset') {
-        audioObj.play('move');
-      }
-
-      // play random car meep audio - chance 1 to 100
-      if(Math.floor(genRnd(1, 100)) === 50) audioObj.play('car');
+    // play random car meep audio - chance 1 to 100
+    if(Math.floor(genRnd(1, 100)) === 50) {
+      soundMaschine.play('car');
     }
+  }
 
-    if(direction === 'reset') {
-      // scrollAnimateTo(CANVAS_HEIGHT, 100);
+  if(direction === 'reset') {
+    // scrollAnimateTo(CANVAS_HEIGHT, 100);
 
-      this.x = CANVAS_WIDTH / 2;
-      this.y = CANVAS_HEIGHT - this.height;
+    this.x = CANVAS_WIDTH / 2;
+    this.y = CANVAS_HEIGHT - this.height;
 
-      this.reseted = true;
-    }
-  };
+    this.reseted = true;
+  }
+
 };
 
 /**
@@ -558,7 +563,7 @@ var frock = function (x, y) {
  *  @desc generates an way object
  */
 
-var way = function (y1, y2) {
+function Way (y1, y2) {
 
   this.y1 = y1;
   this.y2 = y2;
@@ -568,30 +573,32 @@ var way = function (y1, y2) {
   this.template = prt(this.width, this.height);
   this.templateCtx = this.template.getContext('2d');
 
-  this.draw = function (destinationContext) {
+  this.image = undefined;
+};
 
-    var img = new Image();
+Way.prototype.draw = function (destinationContext) {
 
-    img.onload = function () {
+  this.image = new Image();
 
-      for (var h = this.height / TILE_HEIGHT; h >= 0; h--) {
-        for (var w = this.width / TILE_WIDTH; w >= 0; w--) {
-          this.templateCtx.drawImage(img, w * TILE_WIDTH, h * TILE_HEIGHT);
-        }
+  this.image.onload = function () {
+
+    for (var h = this.height / TILE_HEIGHT; h >= 0; h--) {
+      for (var w = this.width / TILE_WIDTH; w >= 0; w--) {
+        this.templateCtx.drawImage(this.image, w * TILE_WIDTH, h * TILE_HEIGHT);
       }
+    }
 
-      if(game.debug) {
-        printBorder(this.templateCtx, this.width, this.height);
-      }
+    if(game.debug) {
+      printBorder(this.templateCtx, this.width, this.height);
+    }
 
-      destinationContext.drawImage(this.template, 0, this.y1);
-    }.bind(this);
+    destinationContext.drawImage(this.template, 0, this.y1);
+  }.bind(this);
 
-    img.src = IMAGES.STREET;
+  this.image.src = IMAGES.STREET;
 
-    // clean
-    this.templateCtx.clearRect(0, 0, this.width, this.height);
-  };
+  // clean
+  this.templateCtx.clearRect(0, 0, this.width, this.height);
 };
 
 /**
@@ -634,43 +641,44 @@ var block = function (x, y, w, h) {
  *  @desc fpsMeter module to update the view with the actual fps count
  */
 
-var fpsMeter = function () {
+function FpsMeter () {
 
   this._then = Date.now();
   this._fps = 0;
-  this._fpsMeterNode = document.getElementById('fps');
-
-  setInterval(function () {
-    this._fpsMeterNode.innerHTML = this._fps;
-    this._fps = 0;
-  }.bind(this), 1000);
+  this.node = document.getElementById('fps');
 
   this.isShowing = true;
 
-  this.show = function () {
-    if(!this.isShowing) {
-      this.isShowing = true;
-      this._fpsMeterNode.style.display = 'block';
-    }
-  };
+  setInterval(function () {
+    this.node.innerHTML = this._fps;
+    this._fps = 0;
+  }.bind(this), 1000);
 
-  this.hide = function () {
-    if(this.isShowing) {
-      this.isShowing = false;
-      this._fpsMeterNode.style.display = 'none';
-    }
-  };
+}
 
-  this.start = function () {
-    this._now = Date.now();
-    this.delta = this._now - this._then;
+FpsMeter.prototype.show = function () {
+  if(!this.isShowing) {
+    this.isShowing = true;
+    this.node.style.display = 'block';
+  }
+};
 
-    this._fps++;
-  };
+FpsMeter.prototype.hide = function () {
+  if(this.isShowing) {
+    this.isShowing = false;
+    this.node.style.display = 'none';
+  }
+};
 
-  this.end = function () {
-    this._then = this._now;
-  };
+FpsMeter.prototype.start = function () {
+  this._now = Date.now();
+  this.delta = this._now - this._then;
+
+  this._fps++;
+};
+
+FpsMeter.prototype.end = function () {
+  this._then = this._now;
 };
 
 /**
@@ -678,36 +686,37 @@ var fpsMeter = function () {
  *  @desc generates the audio object
  */
 
-var audio = function () {
+function SoundMaschine () {
 
-  var SOUNDS = ['move', 'dead', 'levelup', 'car'];
+  this._SOUNDS = ['move', 'dead', 'levelup', 'car'];
 
   this.path = 'audio/';
-
   this.nodes = {};
 
-  for (var s = 0; s < SOUNDS.length; s++) {
-    this.nodes[SOUNDS[s]] = document.createElement('audio');
-    this.nodes[SOUNDS[s]].id = 'sound_' + SOUNDS[s];
-    this.nodes[SOUNDS[s]].volume = 0.5;
-    this.nodes[SOUNDS[s]].src = this.path + SOUNDS[s] +  '.wav';
-    document.body.appendChild(this.nodes[SOUNDS[s]]);
+  for (var s = 0; s < this._SOUNDS.length; s++) {
+    this.nodes[this._SOUNDS[s]] = document.createElement('audio');
+    this.nodes[this._SOUNDS[s]].id = 'sound_' + this._SOUNDS[s];
+    this.nodes[this._SOUNDS[s]].volume = 0.5;
+    this.nodes[this._SOUNDS[s]].src = this.path + this._SOUNDS[s] +  '.wav';
+    document.body.appendChild(this.nodes[this._SOUNDS[s]]);
   }
+}
 
-  this.play = function (soundId) {
-    if(SOUNDS.indexOf(soundId) !== -1) {
-      this.nodes[soundId].currentTime = 0;
-      this.nodes[soundId].play();
-    }
-  };
+SoundMaschine.prototype.play = function (soundId) {
+  if(this._SOUNDS.indexOf(soundId) !== -1) {
+    this.nodes[soundId].currentTime = 0;
+    this.nodes[soundId].play();
+  }
 };
 
 // actions! yay!
 // ------------------------------------------------------------------------------------------
 
-var frockObj  = new frock();
-var audioObj  = new audio();
-var fpsMeterObj = new fpsMeter();
+var frock = new Frock();
+var soundMaschine  = new SoundMaschine();
+var fpsMeter = new FpsMeter();
+
+var lifesService = new LifesService();
 
 var statusScreen = new StatusScreen();
 
@@ -717,12 +726,12 @@ var blocks = [];
 
 function update() {
 
-  fpsMeterObj.start();
+  fpsMeter.start();
 
   if(game.debug) {
-    fpsMeterObj.show();
+    fpsMeter.show();
   } else {
-    fpsMeterObj.hide();
+    fpsMeter.hide();
   }
 
   requestAnimFrame(update);
@@ -731,30 +740,32 @@ function update() {
 
     for(i = 0; i < obstacles.length; i++) {
 
-      obstacles[i].drive(fpsMeterObj.delta);  // let the obstacle drive
+      obstacles[i].drive(fpsMeter.delta);  // let the obstacle drive
 
-      if(!frockObj.died) {
-        frockObj.died = hits(
-          frockObj.x,
-          frockObj.y,
-          frockObj.width,
-          frockObj.height,
+      if(!frock.dead) {
+        frock.dead = hits(
+          frock.x,
+          frock.y,
+          frock.width,
+          frock.height,
           obstacles[i].x,
           obstacles[i].y,
-          obstacles[i].w,
-          obstacles[i].h,
+          obstacles[i].width,
+          obstacles[i].height,
           1
         );
 
-        if(frockObj.died) {
+        if(frock.dead) {
 
-          if(game.lifes.value > 0) {
-            statusScreen.show('<strong>' + (game.lifes.value - 1) + ' Lifes left</strong> <br>Press \'space\' to restart the Level')
-          } else if(game.lifes.value === 0) {
+          var lifesCount = lifesService.getCount();
+
+          if(lifesCount > 0) {
+            statusScreen.show('<strong>' + (lifesCount - 1) + ' Lifes left</strong> <br>Press \'space\' to restart the Level')
+          } else if(lifesCount === 0) {
             statusScreen.show('<strong>Game Over</strong> <br> Press \'space\' to restart the Game')
           }
 
-          audioObj.play('dead');
+          soundMaschine.play('dead');
         }
       }
 
@@ -762,10 +773,10 @@ function update() {
   }
 
   // level up
-  if(frockObj.y < frockObj.height && !frockObj.died) {
+  if(frock.y < frock.height && !frock.dead) {
 
-    frockObj.move('reset');
-    audioObj.play('levelup');
+    frock.move('reset');
+    soundMaschine.play('levelup');
 
     statusScreen.show('Level ' + (game.level.value + 1), 500);
 
@@ -785,7 +796,7 @@ function update() {
 
   draw();
 
-  fpsMeterObj.end();
+  fpsMeter.end();
 }
 
 function draw() {
@@ -796,7 +807,7 @@ function draw() {
   gameCanvasContext.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   // draw frock
-  frockObj.draw(gameCanvasContext);
+  frock.draw(gameCanvasContext);
 
   // draw blocks
   for(var b in blocks) {
@@ -813,57 +824,61 @@ window.addEventListener('keydown', function (event) {
 
   event = event || window.event;
   var c = event.keyCode;
-  var step = frockObj.height;
+  var step = frock.height;
 
   // prevent scrolling, up, down, space
   if(c === 40 || c === 38 || c === 32) event.preventDefault();
 
-  if(!game.pause && !frockObj.died) {
+  if(!game.pause && !frock.dead) {
 
-    // if(frockObj.y - frockObj.h * 3 < window.scrollY) {
-    //   scrollAnimateTo(frockObj.y - frockObj.h * 3, 100);
+    // if(frock.y - frock.h * 3 < window.scrollY) {
+    //   scrollAnimateTo(frock.y - frock.h * 3, 100);
     // }
 
     switch(c) {
-      case 40: case 83: frockObj.move('down'); break;
-      case 87: case 38: frockObj.move('up'); break;
-      case 68: case 39: frockObj.move('right'); break;
-      case 65: case 37: frockObj.move('left'); break;
+      case 40: case 83: frock.move('down'); break;
+      case 87: case 38: frock.move('up'); break;
+      case 68: case 39: frock.move('right'); break;
+      case 65: case 37: frock.move('left'); break;
       case 13: game.debug = !game.debug; break;
     }
   }
 
-  // new game
-  if(c == 32 && frockObj.died && game.lifes.value === 0) {
+  var lifesCount = lifesService.getCount();
 
-    frockObj.died = false;
-    frockObj.move('reset');
+  // new game
+  if(c == 32 && frock.dead && lifesCount === 0) {
+
+    frock.dead = false;
+    frock.move('reset');
 
     statusScreen.hide();
 
     game.pause = false;
     game.reset = true;
 
-    game.lifes.update();
+    lifesService.setCount(3);
+
     game.level.update();
     game.level.draw();
 
   // new chance
-  } else if(c == 32 && frockObj.died && game.lifes.value > 0) {
+  } else if(c == 32 && frock.dead && lifesCount > 0) {
 
-    frockObj.died = false;
-    frockObj.move('reset');
+    frock.dead = false;
+    frock.move('reset');
 
     statusScreen.hide();
 
     game.newChance = true;
     game.pause = false;
 
-    game.lifes.update();
+    lifesService.setCount(lifesService.getCount() - 1);
+
     game.level.draw();
 
   // pause game, if space was pressed & frock is alive
-  } else if(c == 32 && !frockObj.died) {
+  } else if(c == 32 && !frock.dead) {
     game.pause = !game.pause;
 
     if(game.pause) {
